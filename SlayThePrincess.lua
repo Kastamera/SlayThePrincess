@@ -46,12 +46,15 @@ SMODS.Back {
                         force_stickers = true,
                         edition = "e_negative"
                     }
-                    --SMODS.add_card {
-                    --    key = "j_dragon"
-                    --}
-                    --SMODS.add_card {
-                    --    key = "j_spectre"
-                    --}
+                    SMODS.add_card {
+                        key = "j_dragon"
+                    }
+                    SMODS.add_card {
+                        key = "j_spectre"
+                    }
+                    SMODS.add_card {
+                        key = "j_shifty"
+                    }
                 end
                 return true
             end
@@ -340,7 +343,7 @@ SMODS.Joker {
     config = {
         extra = {
             dollars = -5,
-            upgrade = 10,
+            upgrade = 5,
             upgraded = false
         }
     },
@@ -801,12 +804,13 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            xmult = 0
+            xmult = 0,
+            xmult_mod = 1.5
         }
     },
     loc_txt = {
         name = "The Shifting Mound",
-        text = {"{X:red,C:white} X1 {} Mult for each", "{C:attention}Princess Joker{} you have",
+        text = {"{X:red,C:white} X#2# {} Mult for each", "{C:attention}Princess Joker{} you have",
                 "{C:inactive}(Currently {X:red,C:white} X#1# {C:inactive})"}
     },
 
@@ -825,16 +829,16 @@ SMODS.Joker {
     end,
 
     loc_vars = function(self, info_queue, card)
-        card.ability.extra.xmult = self._count_princesses()
+        card.ability.extra.xmult = self._count_princesses() * card.ability.extra.xmult_mod
         return {
-            vars = {card.ability.extra.xmult}
+            vars = {card.ability.extra.xmult, card.ability.extra.xmult_mod}
         }
     end,
 
     calculate = function(self, card, context)
         if context.joker_main then
             return {
-                xmult = self._count_princesses()
+                xmult = self._count_princesses() * card.ability.extra.xmult_mod
             }
         end
     end
