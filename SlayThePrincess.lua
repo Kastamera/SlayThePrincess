@@ -392,7 +392,7 @@ SMODS.Joker {
     key = "adversary",
     pool = "joker",
     blueprint_compat = true,
-    rarity = 2,
+    rarity = 1,
     cost = 6,
     pos = {
         x = 6,
@@ -405,7 +405,7 @@ SMODS.Joker {
     config = {
         extra = {
             mult = 0,
-            mult_mod = 15,
+            mult_mod = 10,
             sold_count = 1
         }
     },
