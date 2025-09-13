@@ -47,7 +47,10 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_jonkler"
+                        key = "j_moment"
+                    }
+                    SMODS.add_card {
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
                         key = "j_damsel"
@@ -480,6 +483,98 @@ SMODS.Joker {
     end
 }
 
+-- The Deconstructed Damsel
+-- SMODS.Joker {
+--    key = "deconstructed",
+--    pool = "joker",
+--    blueprint_compat = true,
+--    rarity = 1,
+--    cost = 6,
+--    pos = {
+--        x = 2,
+--        y = 2
+--    },
+--    eternal_compat = true,
+--    unlocked = true,
+--    discovered = false,
+--    atlas = 'SlayThePrincess',
+--    loc_txt = {
+--        name = "The Deconstructed Damsel",
+--        text = {"Whenever a {C:attention}Queen{} is", "added to your deck,", "add another copy"}
+--    },
+--
+--    calculate = function(self, card, context)
+--        if context.playing_card_added then
+--            for _, copied_card in ipairs(context.cards or {}) do
+--                if copied_card.get_id and copied_card:get_id() == 12 then
+--                    local _card = copy_card(copied_card, nil, nil, G.playing_card)
+--                    _card:add_to_deck()
+--                    G.deck.config.card_limit = G.deck.config.card_limit + 1
+--                    table.insert(G.playing_cards, _card)
+--                    G.hand:emplace(_card)
+--                    _card.states.visible = nil
+--
+--                    G.E_MANAGER:add_event(Event({
+--                        func = function()
+--                            _card:start_materialize()
+--                            return true
+--                        end
+--                    }))
+--                    SMODS.calculate_effect({
+--                        message = 'I just want to make you happy!',
+--                        colour = G.C.PURPLE
+--                    }, card)
+--                end
+--            end
+--        end
+--    end
+-- }
+
+-- The Prisoner
+SMODS.Joker {
+    key = "prisoner",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 5,
+    pos = {
+        x = 3,
+        y = 1
+    },
+    eternal_compat = false,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            mult = 10
+        }
+    },
+    loc_txt = {
+        name = "The Prisoner",
+        text = {"{C:red}+#1#{} Mult", "turns into The Head", "when destroyed"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.mult}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.joker_type_destroyed then
+            return {
+                message = 'hehehehehehehehehe'
+            }
+        end
+        if context.joker_main then
+            return {
+                mult = card.ability.extra.mult
+            }
+        end
+    end
+}
+
 -- The Adversary
 SMODS.Joker {
     key = "adversary",
@@ -540,6 +635,59 @@ SMODS.Joker {
         if context.joker_main then
             return {
                 mult = self._state().sold * card.ability.extra.mult_mod
+            }
+        end
+    end
+}
+
+-- The Eye of the Needle
+SMODS.Joker {
+    key = "eye",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 2,
+    cost = 7,
+    pos = {
+        x = 6,
+        y = 2
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            chips = 0,
+            chips_mod = 6
+        }
+    },
+
+    loc_txt = {
+        name = "The Eye of the Needle",
+        text = {"This Joker gains", "{C:chips}+#2#{} Chips when each", "played {C:attention}Queen{} is scored",
+                "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.chips, card.ability.extra.chips_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play and context.other_card:get_id() == 12 and
+            not context.blueprint then
+            card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chips_mod
+
+            return {
+                message = localize('k_upgrade_ex'),
+                colour = G.C.CHIPS,
+                message_card = card
+            }
+        end
+        if context.joker_main then
+            return {
+                chips = card.ability.extra.chips
             }
         end
     end
@@ -955,7 +1103,8 @@ SMODS.Joker {
 
     loc_txt = {
         name = "The Moment of Clarity",
-        text = {"+1 hand size for every {C:attention}10 Queens{}", "in your {C:attention} full deck{}",
+        text = {"At start of round, gain", "+1 hand size for every",
+                "{C:attention}10 Queens{} in your {C:attention}full deck{},", "bonus lost at end of round",
                 "{C:inactive}Currently: +#1# hand size"}
     },
 
@@ -977,13 +1126,14 @@ SMODS.Joker {
 
     calculate = function(self, card, context)
         if context.first_hand_drawn and not context.blueprint then
-            card.ability.extra.hand_size = self._count_hand_increase
-            G.hand:change_size(2)
+            card.ability.extra.hand_size = self._count_hand_increase()
+            G.hand:change_size(card.ability.extra.hand_size)
+            SMODS.draw_cards(card.ability.extra.hand_size)
         end
 
         if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
             G.hand:change_size(-card.ability.extra.hand_size)
-            self.card.ability.extra.hand_size = 0
+            card.ability.extra.hand_size = 0
         end
     end,
 
