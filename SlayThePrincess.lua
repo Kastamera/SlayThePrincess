@@ -7,7 +7,7 @@
 ----------------------------------------------
 ------------MOD CODE -------------------------
 function SMODS.INIT.SlayThePrincess()
-    -- keep if you need init later
+
 end
 
 SMODS.Atlas {
@@ -47,13 +47,16 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_dragon"
+                        key = "j_burned"
                     }
                     SMODS.add_card {
-                        key = "j_spectre"
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
-                        key = "j_shifty"
+                        key = "c_cryptid"
+                    }
+                    SMODS.add_card {
+                        key = "c_cryptid"
                     }
                 end
                 return true
@@ -68,7 +71,7 @@ SMODS.Back {
 
 SMODS.Rarity {
     key = "stp_pristine",
-    default_weight = 0.005,
+    default_weight = 0.0025,
     badge_colour = HEX('CFFFF6'),
     pools = {
         ["Joker"] = true
@@ -152,7 +155,7 @@ SMODS.Joker {
     },
 
     calculate = function(self, card, context)
-        if context.remove_playing_cards and not context.blueprint then
+        if context.remove_playing_cards then
             local queens_destroyed = 0
             for _, removed_card in ipairs(context.removed) do
                 if removed_card:get_id() == 12 then
@@ -262,7 +265,7 @@ SMODS.Joker {
 
     calculate = function(self, card, context)
         if context.before and not context.blueprint then
-            local played_hand = context.scoring_name or "" -- ensure a string
+            local played_hand = context.scoring_name or ""
             local ret = self._check_and_append_list(card, played_hand)
             if ret then
                 return ret
@@ -387,6 +390,53 @@ SMODS.Joker {
     end
 }
 
+-- The Damsel
+SMODS.Joker {
+    key = "damsel",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 6,
+    pos = {
+        x = 2,
+        y = 2
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    loc_txt = {
+        name = "The Damsel",
+        text = {"Whenever a {C:attention}Queen{} is", "added to your deck,", "add another copy"}
+    },
+
+    calculate = function(self, card, context)
+        if context.playing_card_added then
+            for _, copied_card in ipairs(context.cards or {}) do
+                if copied_card.get_id and copied_card:get_id() == 12 then
+                    local _card = copy_card(copied_card, nil, nil, G.playing_card)
+                    _card:add_to_deck()
+                    G.deck.config.card_limit = G.deck.config.card_limit + 1
+                    table.insert(G.playing_cards, _card)
+                    G.hand:emplace(_card)
+                    _card.states.visible = nil
+
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            _card:start_materialize()
+                            return true
+                        end
+                    }))
+                    SMODS.calculate_effect({
+                        message = 'I just want to make you happy!',
+                        colour = G.C.PURPLE
+                    }, card)
+                end
+            end
+        end
+    end
+}
+
 -- The Adversary
 SMODS.Joker {
     key = "adversary",
@@ -501,7 +551,7 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.debuff_card and type(context.debuff_card:get_id()) == "number" and context.debuff_card:get_id() < 12 then
+        if context.debuff_card and not context.blueprint and type(context.debuff_card:get_id()) == "number" and context.debuff_card:get_id() < 12 then
             return {
                 debuff = true
             }
@@ -580,6 +630,58 @@ SMODS.Joker {
             return {
                 mult = card.ability.extra.mult,
                 Xmult = card.ability.extra.xmult
+            }
+        end
+    end
+}
+
+-- The Burned Grey
+SMODS.Joker {
+    key = "burned",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 2,
+    cost = 7,
+    pos = {
+        x = 3,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            xmult_fire = 0.5,
+            dollars_fire = 10,
+            xmult_no_fire = 3,
+            dollars_no_fire = -5
+        }
+    },
+    loc_txt = {
+        name = "The Burned Grey",
+        text = {"{X:mult,C:white} X#3# {} Mult and earn {C:money}$#4#{} after", "playing a {C:attention}poker hand{}", "If your score {C:red}is on fire{},",
+                "{X:mult,C:white} X#1# {} Mult and earn {C:money}$#2#{} instead"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.xmult_fire, card.ability.extra.dollars_fire, card.ability.extra.xmult_no_fire,
+                    card.ability.extra.dollars_no_fire}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.joker_main then
+            if hand_chips * mult > G.GAME.blind.chips then
+                return {
+                    xmult = card.ability.extra.xmult_fire,
+                    dollars = card.ability.extra.dollars_fire
+                }
+            end
+            return {
+                xmult = card.ability.extra.xmult_no_fire,
+                dollars = card.ability.extra.dollars_no_fire
             }
         end
     end
@@ -781,8 +883,16 @@ SMODS.Joker {
         if context.repetition and context.cardarea == G.play then
             scoring_queens = self._count_scoring_queens(context)
             scoring_non_queens = self._count_scoring_non_queens(context)
-            if context.other_card:get_id() == 12 then return { repetitions = scoring_non_queens } end
-            if context.other_card:get_id() ~= 12 then return { repetitions = scoring_queens } end
+            if context.other_card:get_id() == 12 then
+                return {
+                    repetitions = scoring_non_queens
+                }
+            end
+            if context.other_card:get_id() ~= 12 then
+                return {
+                    repetitions = scoring_queens
+                }
+            end
         end
     end
 }
