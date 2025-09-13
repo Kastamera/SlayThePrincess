@@ -47,7 +47,10 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_burned"
+                        key = "j_jonkler"
+                    }
+                    SMODS.add_card {
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
                         key = "j_damsel"
@@ -126,9 +129,49 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.joker_main and not context.blueprint then
+        if context.joker_main then
             return {
                 mult = self._count_queens()
+            }
+        end
+    end
+}
+
+-- The Jonkler
+SMODS.Joker {
+    key = "jonkler",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 2,
+    pos = {
+        x = 6,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            mult = 4
+        }
+    },
+    loc_txt = {
+        name = "The Jonkler",
+        text = {"{C:red,s:1.1}+#1#{} Mult"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.mult}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.joker_main then
+            return {
+                mult = card.ability.extra.mult
             }
         end
     end
@@ -551,7 +594,8 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.debuff_card and not context.blueprint and type(context.debuff_card:get_id()) == "number" and context.debuff_card:get_id() < 12 then
+        if context.debuff_card and not context.blueprint and type(context.debuff_card:get_id()) == "number" and
+            context.debuff_card:get_id() < 12 then
             return {
                 debuff = true
             }
@@ -660,8 +704,8 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Burned Grey",
-        text = {"{X:mult,C:white} X#3# {} Mult and earn {C:money}$#4#{} after", "playing a {C:attention}poker hand{}", "If your score {C:red}is on fire{},",
-                "{X:mult,C:white} X#1# {} Mult and earn {C:money}$#2#{} instead"}
+        text = {"{X:mult,C:white} X#3# {} Mult and earn {C:money}$#4#{} after", "playing a {C:attention}poker hand{}",
+                "If your score {C:red}is on fire{},", "{X:mult,C:white} X#1# {} Mult and earn {C:money}$#2#{} instead"}
     },
 
     loc_vars = function(self, info_queue, card)
@@ -673,7 +717,7 @@ SMODS.Joker {
 
     calculate = function(self, card, context)
         if context.joker_main then
-            if hand_chips * mult > G.GAME.blind.chips then
+            if hand_chips * mult >= G.GAME.blind.chips then
                 return {
                     xmult = card.ability.extra.xmult_fire,
                     dollars = card.ability.extra.dollars_fire
@@ -682,6 +726,63 @@ SMODS.Joker {
             return {
                 xmult = card.ability.extra.xmult_no_fire,
                 dollars = card.ability.extra.dollars_no_fire
+            }
+        end
+    end
+}
+
+-- The Drowned Grey
+SMODS.Joker {
+    key = "drowned",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 2,
+    cost = 7,
+    pos = {
+        x = 4,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            xmult_start = 0.5,
+            xmult = 0.5,
+            xmult_mod = 0.25
+        }
+    },
+    loc_txt = {
+        name = "The Drowned Grey",
+        text = {"{X:mult,C:white} X#3# {} Mult per hand played,", "reset if {C:red}score is on fire{}",
+                "at end of round", "{C:inactive}Currently: {X:mult,C:white} X#2#{}} {C:inactive}Mult"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.xmult_start, card.ability.extra.xmult, card.ability.extra.xmult_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.joker_main then
+            return {
+                xmult = card.ability.extra.xmult
+            }
+        end
+
+        if context.final_scoring_step then
+            if hand_chips * mult >= G.GAME.blind.chips then
+                card.ability.extra.xmult = card.ability.extra.xmult_start
+                return {
+                    message = localize('k_reset')
+                }
+            end
+            card.ability.extra.xmult = card.ability.extra.xmult + card.ability.extra.xmult_mod
+            return {
+                message = localize('k_upgrade_ex'),
+                colour = G.C.MULT
             }
         end
     end
@@ -828,6 +929,66 @@ SMODS.Joker {
                 message = 'No queens'
             }
         end
+    end
+}
+
+-- The Moment of Clarity (broken)
+SMODS.Joker {
+    key = "moment",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = 3,
+    cost = 8,
+    pos = {
+        x = 2,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            hand_size = 0
+        }
+    },
+
+    loc_txt = {
+        name = "The Moment of Clarity",
+        text = {"+1 hand size for every {C:attention}10 Queens{}", "in your {C:attention} full deck{}",
+                "{C:inactive}Currently: +#1# hand size"}
+    },
+
+    _count_hand_increase = function()
+        local n = 0
+        for _, c in ipairs(G.playing_cards or {}) do
+            if c and c.get_id and c:get_id() == 12 then
+                n = n + 1
+            end
+        end
+        return math.floor(n / 10)
+    end,
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.hand_size}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.first_hand_drawn and not context.blueprint then
+            card.ability.extra.hand_size = self._count_hand_increase
+            G.hand:change_size(2)
+        end
+
+        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
+            G.hand:change_size(-card.ability.extra.hand_size)
+            self.card.ability.extra.hand_size = 0
+        end
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        G.hand:change_size(-card.ability.extra.hand_size)
     end
 }
 
