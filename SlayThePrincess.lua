@@ -47,12 +47,6 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_moment"
-                    }
-                    SMODS.add_card {
-                        key = "j_damsel"
-                    }
-                    SMODS.add_card {
                         key = "j_damsel"
                     }
                     SMODS.add_card {
@@ -1206,6 +1200,78 @@ SMODS.Joker {
             end
         end
     end
+}
+
+_G.STP_HAPPILY = _G.STP_HAPPILY or {}
+
+-- Happily Ever After
+SMODS.Joker {
+    key = "happily",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = "stp_pristine",
+    cost = 14,
+    pos = { x = 0, y = 3 },
+    eternal_compat = false,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+
+    loc_txt = {
+        name = "Happily Ever After",
+        text = { "Is a changeless world worth saving?" }
+    },
+
+    
+    add_to_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event({
+            trigger = "after",
+            delay   = G.SETTINGS.GAMESPEED,
+            func    = function()
+                save_run()
+                _G.STP_HAPPILY.snap = STR_PACK(G.culled_table)
+                _G.STP_HAPPILY.ante = (G.GAME.round_resets and G.GAME.round_resets.ante) or 0
+                save_run()
+                return true
+            end
+        }), "other")
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        _G.STP_HAPPILY.snap = nil
+        _G.STP_HAPPILY.ante = nil
+        G.GAME.stp_reverting = nil
+    end,
+
+    calculate = function(self, card, context)
+        if not (context and context.end_of_round) then return end
+        if context.repetition or context.individual then return end
+        if G.GAME.stp_reverting then return end
+        if not _G.STP_HAPPILY.snap then return end
+
+        local ante_before = (G.GAME.round_resets and G.GAME.round_resets.ante) or 0
+
+        G.E_MANAGER:add_event(Event({
+            trigger = "after",
+            delay   = G.SETTINGS.GAMESPEED,
+            func    = function()
+                if not (G.GAME and G.GAME.round_resets) then return true end
+                local ante_after = G.GAME.round_resets.ante or ante_before
+
+                if not G.GAME.stp_reverting and ante_after > ante_before then
+                    G.GAME.stp_reverting = true
+
+                    local snap = _G.STP_HAPPILY.snap
+
+                    G:delete_run()
+                    G:start_run({ savetext = STR_UNPACK(snap) })
+
+                    return true
+                end
+                return true
+            end
+        }), "other")
+    end,
 }
 
 -- The Shifting Mound
