@@ -47,10 +47,20 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_damsel"
+                        key = "j_prisoner",
+                        edition = "e_foil"
                     }
                     SMODS.add_card {
-                        key = "j_damsel"
+                        key = "j_prisoner"
+                    }
+                    SMODS.add_card {
+                        key = "j_adversary"
+                    }
+                    SMODS.add_card {
+                        key = "j_blueprint"
+                    }
+                    SMODS.add_card {
+                        key = "j_madness"
                     }
                     SMODS.add_card {
                         key = "c_cryptid"
@@ -348,7 +358,7 @@ SMODS.Joker {
     },
 
     loc_vars = function(self, info_queue, card)
-        local numerator, denominator = SMODS.get_probability_vars(card, 1, card.ability.extra.odds, 'witch')
+        local numerator, denominator = SMODS.get_probability_vars(card, 1, card.ability.extra.odds, 'stp_witch')
         return {
             vars = {numerator, denominator, card.ability.extra.xmult_low, card.ability.extra.xmult_high}
         }
@@ -356,7 +366,7 @@ SMODS.Joker {
 
     calculate = function(self, card, context)
         if context.joker_main then
-            if SMODS.pseudorandom_probability(card, 'witch', 1, card.ability.extra.odds) then
+            if SMODS.pseudorandom_probability(card, 'stp_witch', 1, card.ability.extra.odds) then
                 return {
                     xmult = card.ability.extra.xmult_low
                 }
@@ -441,14 +451,27 @@ SMODS.Joker {
         x = 2,
         y = 2
     },
-    eternal_compat = true,
+    eternal_compat = false,
     unlocked = true,
     discovered = false,
     atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            odds = 10
+        }
+    },
     loc_txt = {
         name = "The Damsel",
-        text = {"Whenever a {C:attention}Queen{} is", "added to your deck,", "add another copy"}
+        text = {"Whenever a {C:attention}Queen{} is", "added to your deck,", "add another copy",
+                "{C:green}#1# in #2#{} chance this Joker ", "is destroyed after", "adding another copy"}
     },
+
+    loc_vars = function(self, info_queue, card)
+        local numerator, denominator = SMODS.get_probability_vars(card, 1, card.ability.extra.odds, 'stp_damsel')
+        return {
+            vars = {numerator, denominator}
+        }
+    end,
 
     calculate = function(self, card, context)
         if context.playing_card_added then
@@ -471,58 +494,74 @@ SMODS.Joker {
                         message = 'I just want to make you happy!',
                         colour = G.C.PURPLE
                     }, card)
+                    if SMODS.pseudorandom_probability(card, 'stp_damsel', 1, card.ability.extra.odds) then
+                        SMODS.destroy_cards(card, nil, nil, true)
+                        G.GAME.pool_flags.stp_damsel_extinct = true
+                        return {
+                            message = 'Deconstructed',
+                            colour = G.C.PURPLE
+                        }
+                    end
                 end
             end
         end
+    end,
+    in_pool = function(self, args)
+        return not G.GAME.pool_flags.stp_damsel_extinct
     end
 }
 
 -- The Deconstructed Damsel
--- SMODS.Joker {
---    key = "deconstructed",
---    pool = "joker",
---    blueprint_compat = true,
---    rarity = 1,
---    cost = 6,
---    pos = {
---        x = 2,
---        y = 2
---    },
---    eternal_compat = true,
---    unlocked = true,
---    discovered = false,
---    atlas = 'SlayThePrincess',
---    loc_txt = {
---        name = "The Deconstructed Damsel",
---        text = {"Whenever a {C:attention}Queen{} is", "added to your deck,", "add another copy"}
---    },
---
---    calculate = function(self, card, context)
---        if context.playing_card_added then
---            for _, copied_card in ipairs(context.cards or {}) do
---                if copied_card.get_id and copied_card:get_id() == 12 then
---                    local _card = copy_card(copied_card, nil, nil, G.playing_card)
---                    _card:add_to_deck()
---                    G.deck.config.card_limit = G.deck.config.card_limit + 1
---                    table.insert(G.playing_cards, _card)
---                    G.hand:emplace(_card)
---                    _card.states.visible = nil
---
---                    G.E_MANAGER:add_event(Event({
---                        func = function()
---                            _card:start_materialize()
---                            return true
---                        end
---                    }))
---                    SMODS.calculate_effect({
---                        message = 'I just want to make you happy!',
---                        colour = G.C.PURPLE
---                    }, card)
---                end
---            end
---        end
---    end
--- }
+SMODS.Joker {
+    key = "deconstructed",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 6,
+    pos = {
+        x = 3,
+        y = 2
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    loc_txt = {
+        name = "The Deconstructed Damsel",
+        text = {"Whenever a {C:attention}Queen{} is added to", "your deck, add 2 additional copies"}
+    },
+
+    calculate = function(self, card, context)
+        if context.playing_card_added then
+            for _, copied_card in ipairs(context.cards or {}) do
+                if copied_card.get_id and copied_card:get_id() == 12 then
+                    for i = 1, 2 do
+                        local _card = copy_card(copied_card, nil, nil, G.playing_card)
+                        _card:add_to_deck()
+                        G.deck.config.card_limit = G.deck.config.card_limit + 1
+                        table.insert(G.playing_cards, _card)
+                        G.hand:emplace(_card)
+                        _card.states.visible = nil
+
+                        G.E_MANAGER:add_event(Event({
+                            func = function()
+                                _card:start_materialize()
+                                return true
+                            end
+                        }))
+                        SMODS.calculate_effect({
+                            message = 'I just want to make you happy?',
+                            colour = G.C.PURPLE
+                        }, card)
+                    end
+                end
+            end
+        end
+    end,
+    in_pool = function(self, args)
+        return G.GAME.pool_flags.stp_damsel_extinct
+    end
+}
 
 -- The Prisoner
 SMODS.Joker {
@@ -541,31 +580,90 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 10
+            mult = 10,
+            destroyedstate = true
         }
     },
     loc_txt = {
         name = "The Prisoner",
-        text = {"{C:red}+#1#{} Mult", "turns into The Head", "when destroyed"}
+        text = {"{C:red}+#1#{} Mult", "turns into {C:attention}The Head{}", "when destroyed"}
     },
 
     loc_vars = function(self, info_queue, card)
         return {
-            vars = {card.ability.extra.mult}
+            vars = {card.ability.extra.mult, card.ability.extra.destroyedstate}
         }
     end,
 
     calculate = function(self, card, context)
-        if context.joker_type_destroyed then
-            return {
-                message = 'hehehehehehehehehe'
-            }
+        if context.selling_self and not context.blueprint then
+            card.ability.extra.destroyedstate = false
         end
+
         if context.joker_main then
             return {
                 mult = card.ability.extra.mult
             }
         end
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        if card.ability.extra.destroyedstate == true then
+            print(card.stickers)
+            SMODS.add_card {
+                key = "j_head",
+                edition = card.edition
+            }
+        end
+    end
+}
+
+-- The Head
+SMODS.Joker {
+    key = "head",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 5,
+    pos = {
+        x = 4,
+        y = 2
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            mult = 10,
+            destroyedstate = true
+        }
+    },
+    loc_txt = {
+        name = "The Head",
+        text = {"{C:red}+#1#{} Mult", "turns into The Head", "when destroyed"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.mult, card.ability.extra.destroyedstate}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.selling_self and not context.blueprint then
+            card.ability.extra.destroyedstate = false
+        end
+
+        if context.joker_main then
+            return {
+                mult = card.ability.extra.mult
+            }
+        end
+    end,
+
+    in_pool = function(self, args)
+        return false
     end
 }
 
@@ -594,7 +692,7 @@ SMODS.Joker {
 
     loc_txt = {
         name = "The Adversary",
-        text = {"{C:red}+#1#{} Mult, increases by {C:red}+#2#{} Mult", "every time this Joker is sold"}
+        text = {"{C:red}+#1#{} Mult, increases by {C:red}+#2#{} Mult", "every time this Joker is sold or destroyed"}
     },
 
     _state = function()
@@ -612,25 +710,24 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.selling_self and not context.blueprint then
-            G.E_MANAGER:add_event(Event {
-                func = function()
-                    self._state().sold = self._state().sold + 1
-                    play_sound('generic1', 0.9 + math.random() * 0.1, 0.8)
-                    return {
-                        message = 'MORE!',
-                        colour = G.C.MULT
-                    }
-                end
-            })
-            return nil, true
-        end
-
         if context.joker_main then
             return {
                 mult = self._state().sold * card.ability.extra.mult_mod
             }
         end
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event {
+            func = function()
+                self._state().sold = self._state().sold + 1
+                play_sound('generic1', 0.9 + math.random() * 0.1, 0.8)
+                return {
+                    message = 'MORE!',
+                    colour = G.C.MULT
+                }
+            end
+        })
     end
 }
 
@@ -890,7 +987,7 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            xmult_start = 0.5,
+            xmult_start = 0.75,
             xmult = 0.5,
             xmult_mod = 0.25
         }
@@ -1074,7 +1171,7 @@ SMODS.Joker {
     end
 }
 
--- The Moment of Clarity (broken)
+-- The Moment of Clarity
 SMODS.Joker {
     key = "moment",
     pool = "joker",
@@ -1211,7 +1308,10 @@ SMODS.Joker {
     blueprint_compat = false,
     rarity = "stp_pristine",
     cost = 14,
-    pos = { x = 0, y = 3 },
+    pos = {
+        x = 0,
+        y = 3
+    },
     eternal_compat = false,
     unlocked = true,
     discovered = false,
@@ -1219,15 +1319,14 @@ SMODS.Joker {
 
     loc_txt = {
         name = "Happily Ever After",
-        text = { "Is a changeless world worth saving?" }
+        text = {"Is a changeless world worth saving?"}
     },
 
-    
     add_to_deck = function(self, card, from_debuff)
         G.E_MANAGER:add_event(Event({
             trigger = "after",
-            delay   = G.SETTINGS.GAMESPEED,
-            func    = function()
+            delay = G.SETTINGS.GAMESPEED,
+            func = function()
                 save_run()
                 _G.STP_HAPPILY.snap = STR_PACK(G.culled_table)
                 _G.STP_HAPPILY.ante = (G.GAME.round_resets and G.GAME.round_resets.ante) or 0
@@ -1244,18 +1343,28 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if not (context and context.end_of_round) then return end
-        if context.repetition or context.individual then return end
-        if G.GAME.stp_reverting then return end
-        if not _G.STP_HAPPILY.snap then return end
+        if not (context and context.end_of_round) then
+            return
+        end
+        if context.repetition or context.individual then
+            return
+        end
+        if G.GAME.stp_reverting then
+            return
+        end
+        if not _G.STP_HAPPILY.snap then
+            return
+        end
 
         local ante_before = (G.GAME.round_resets and G.GAME.round_resets.ante) or 0
 
         G.E_MANAGER:add_event(Event({
             trigger = "after",
-            delay   = G.SETTINGS.GAMESPEED,
-            func    = function()
-                if not (G.GAME and G.GAME.round_resets) then return true end
+            delay = G.SETTINGS.GAMESPEED,
+            func = function()
+                if not (G.GAME and G.GAME.round_resets) then
+                    return true
+                end
                 local ante_after = G.GAME.round_resets.ante or ante_before
 
                 if not G.GAME.stp_reverting and ante_after > ante_before then
@@ -1264,14 +1373,16 @@ SMODS.Joker {
                     local snap = _G.STP_HAPPILY.snap
 
                     G:delete_run()
-                    G:start_run({ savetext = STR_UNPACK(snap) })
+                    G:start_run({
+                        savetext = STR_UNPACK(snap)
+                    })
 
                     return true
                 end
                 return true
             end
         }), "other")
-    end,
+    end
 }
 
 -- The Shifting Mound
