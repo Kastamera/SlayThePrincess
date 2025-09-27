@@ -51,20 +51,22 @@ if not _G.STP._drew_hooked then
     _G.STP._drew_hooked = true
 end
 
-if not _G.STP then _G.STP = {} end
+if not _G.STP then
+    _G.STP = {}
+end
 if not _G.STP._can_highlight_hooked then
-  local _orig_can_highlight = CardArea.can_highlight
+    local _orig_can_highlight = CardArea.can_highlight
 
-  function CardArea:can_highlight(card, ...)
-    if self == G.hand and card and SMODS and SMODS.has_enhancement then
-      if SMODS.has_enhancement(card, 'm_stp_chained') then
-        return false
-      end
+    function CardArea:can_highlight(card, ...)
+        if self == G.hand and card and SMODS and SMODS.has_enhancement then
+            if SMODS.has_enhancement(card, 'm_stp_chained') then
+                return false
+            end
+        end
+        return _orig_can_highlight(self, card, ...)
     end
-    return _orig_can_highlight(self, card, ...)
-  end
 
-  _G.STP._can_highlight_hooked = true
+    _G.STP._can_highlight_hooked = true
 end
 
 function _G.STP_is_leftmost_beast(card)
@@ -110,13 +112,10 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_prisoner"
+                        key = "j_hanging_chad"
                     }
                     SMODS.add_card {
                         key = "j_cage"
-                    }
-                    SMODS.add_card {
-                        key = "j_madness"
                     }
                 end
                 return true
@@ -159,8 +158,13 @@ SMODS.Enhancement {
     end,
     loc_txt = {
         name = "Chained",
-        text = {"{C:red}Cannot be selected{}", "Each played card with", "this card's rank gives", "{X:mult,C:white} X#1#{} Mult when scored"}
-    }
+        text = {"{C:red}Cannot be selected{}", "Each played card with", "this card's rank gives",
+                "{X:mult,C:white} X#1#{} Mult when scored"}
+    },
+
+    in_pool = function(self, args)
+        return false
+    end
 }
 
 ------------JOKERS---------------------
@@ -784,7 +788,9 @@ SMODS.Joker {
     end,
 
     _reset_chains = function()
-        if not G.playing_cards then return end
+        if not G.playing_cards then
+            return
+        end
         for _, c in ipairs(G.playing_cards or {}) do
             if SMODS.has_enhancement(c, 'm_stp_chained') then
                 c:set_ability('c_base', nil, true)
@@ -829,6 +835,33 @@ SMODS.Joker {
             end
 
             delay(0.5)
+        end
+
+        if context.individual and context.cardarea == G.play and not context.blueprint then
+            local scoring = context.other_card
+            if scoring and scoring.get_id then
+                local rank = scoring:get_id()
+                local count = 0
+
+                for _, h in ipairs(G.hand and G.hand.cards or {}) do
+                    if SMODS.has_enhancement(h, 'm_stp_chained') and h.get_id and h:get_id() == rank then
+                        count = count + 1
+                    end
+                end
+
+                if count > 0 then
+                    local base_x = (G.P_CENTERS and G.P_CENTERS.m_stp_chained and G.P_CENTERS.m_stp_chained.config and
+                                       G.P_CENTERS.m_stp_chained.config.xmult) or 1.5
+                    local total_x = base_x ^ count
+
+                    return {
+                        message = 'Chained x' .. tostring(count),
+                        xmult = total_x,
+                        colour = G.C.XMULT,
+                        message_card = scoring
+                    }
+                end
+            end
         end
 
         if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
