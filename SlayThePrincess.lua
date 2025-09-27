@@ -112,7 +112,13 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_beast"
+                        key = "j_wraith"
+                    }
+                    SMODS.add_card {
+                        key = "j_hanging_chad"
+                    }
+                    SMODS.add_card {
+                        key = "c_hanged_man"
                     }
                 end
                 return true
@@ -398,6 +404,67 @@ SMODS.Joker {
             return {
                 mult = card.ability.extra.mult
             }
+        end
+    end
+}
+
+-- The Wraith
+SMODS.Joker {
+    key = "wraith",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 2,
+    cost = 6,
+    pos = {
+        x = 5,
+        y = 2
+    },
+
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            mult = 4,
+            mult_mod = 4
+        }
+    },
+    loc_txt = {
+        name = "The Wraith",
+        text = {"Played {C:attention}Queens{} give", "{C:mult}+#1#{} Mult when scored,", "increased by {C:mult}+#2#{} Mult for", "each {C:attention}Queen{} destroyed"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.mult, card.ability.extra.mult_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.remove_playing_cards then
+            local queens_destroyed = 0
+            for _, removed_card in ipairs(context.removed) do
+                if removed_card:get_id() == 12 then
+                    queens_destroyed = queens_destroyed + 1
+                end
+            end
+            if queens_destroyed > 0 then
+                card.ability.extra.mult = card.ability.extra.mult + queens_destroyed * card.ability.extra.mult_mod
+                return {
+                    remove = true,
+                    message = localize('k_upgrade_ex'),
+                    colour = G.C.MULT
+                }
+            end
+        end
+
+        if context.individual and context.cardarea == G.play then
+            if context.other_card:get_id() == 12 then
+                return {
+                    mult = card.ability.extra.mult
+                }
+            end
         end
     end
 }
