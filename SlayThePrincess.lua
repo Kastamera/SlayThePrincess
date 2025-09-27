@@ -47,27 +47,14 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_prisoner",
-                        edition = "e_foil"
+                        key = "j_den"
                     }
-                    SMODS.add_card {
-                        key = "j_prisoner"
-                    }
-                    SMODS.add_card {
-                        key = "j_adversary"
-                    }
-                    SMODS.add_card {
-                        key = "j_blueprint"
-                    }
-                    SMODS.add_card {
-                        key = "j_madness"
-                    }
-                    SMODS.add_card {
-                        key = "c_cryptid"
-                    }
-                    SMODS.add_card {
-                        key = "c_cryptid"
-                    }
+                    --SMODS.add_card {
+                    --    key = "j_beast"
+                    --}
+                    -- SMODS.add_card {
+                    --    key = "c_cryptid"
+                    -- }
                 end
                 return true
             end
@@ -918,6 +905,174 @@ SMODS.Joker {
     end
 }
 
+-- The Beast
+--SMODS.Joker {
+--    key = "beast",
+--    pool = "joker",
+--    blueprint_compat = false,
+--    rarity = 3,
+--    cost = 8,
+--    pos = {
+--        x = 1,
+--        y = 2
+--    },
+--    eternal_compat = false,
+--    unlocked = true,
+--    discovered = false,
+--    atlas = 'SlayThePrincess',
+--    config = {
+--        extra = {
+--            cards = {}
+--        }
+--    },
+--    loc_txt = {
+--        name = "The Beast",
+--        text = {"If {C:attention}first hand{} of round has only {C:attention}1{} card,",
+--                "this Joker consumes it, {C:attention}temporarily{}", "removing it from your deck",
+--                "When this Joker is sold or destroyed,", "it returns {C:attention}all consumed cards{} to your hand"}
+--    },
+--
+--    loc_vars = function(self, info_queue, card)
+--        return {
+--            vars = {card.ability.extra.cards}
+--        }
+--    end,
+--
+--    calculate = function(self, card, context)
+--        if context.destroy_card and not context.blueprint then
+--            if #context.full_hand == 1 and context.destroy_card == context.full_hand[1] and
+--                G.GAME.current_round.hands_played == 0 then
+--                card.ability.extra.cards[#card.ability.extra.cards + 1] =
+--                    copy_card(context.full_hand[1], nil, nil, G.playing_card)
+--                return {
+--                    message = 'Eaten',
+--                    colour = G.C.MULT,
+--                    remove = true
+--                }
+--            end
+--        end
+--    end,
+--
+--    remove_from_deck = function(self, card, from_debuff)
+--        if #card.ability.extra.cards == 0 then
+--            return
+--        end
+--        for _, c in card.ability.extra.cards do
+--            c:add_to_deck()
+--            G.deck.config.card_limit = G.deck.config.card_limit + 1
+--            table.insert(G.playing_cards, c)
+--            G.hand:emplace(c)
+--        end
+--    end
+--}
+
+-- The Den
+SMODS.Joker {
+    key = "den",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = 2,
+    cost = 6,
+    pos = {
+        x = 1,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            joker_slots = -1,
+            consumable_slots = 2,
+            hand_size = 2
+        }
+    },
+    loc_txt = {
+        name = "The Den",
+        text = {"{C:attention}+#3#{} hand size,", "{C:attention}+#2#{} consumable slots", "{C:red}#1#{} Joker Slot"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.joker_slots, card.ability.extra.consumable_slots, card.ability.extra.hand_size}
+        }
+    end,
+
+    add_to_deck = function(self, card, from_debuff)
+        G.hand:change_size(card.ability.extra.hand_size)
+        G.consumeables.config.card_limit = G.consumeables.config.card_limit + card.ability.extra.consumable_slots
+        G.jokers.config.card_limit = G.jokers.config.card_limit + card.ability.extra.joker_slots
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        G.hand:change_size(-card.ability.extra.hand_size)
+        G.consumeables.config.card_limit = G.consumeables.config.card_limit - card.ability.extra.consumable_slots
+        G.jokers.config.card_limit = G.jokers.config.card_limit - card.ability.extra.joker_slots
+    end
+}
+
+-- The Wild
+SMODS.Joker {
+    key = "wild",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 3,
+    cost = 7,
+    pos = {
+        x = 5,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            xmult = 1,
+            xmult_mod = 0.75
+        }
+    },
+    loc_txt = {
+        name = "The Wild",
+        text = {"This Joker gains {X:mult,C:white} X#2# {} Mult whenever",
+                "each played {C:attention}Wild{} card is scored",
+                "{C:inactive}(Currently {X:mult,C:white}X#1#{} {C:inactive}Mult)"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.xmult, card.ability.extra.xmult_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.individual and context.cardarea == G.play and SMODS.has_enhancement(context.other_card, "m_wild") and
+            not context.blueprint then
+            card.ability.extra.xmult = card.ability.extra.xmult + card.ability.extra.xmult_mod
+            return {
+                message = localize('k_upgrade_ex'),
+                colour = G.C.XMULT,
+                message_card = card
+            }
+        end
+        if context.joker_main then
+            return {
+                Xmult = card.ability.extra.xmult
+            }
+        end
+    end,
+
+    in_pool = function(self, args)
+        for _, playing_card in ipairs(G.playing_cards or {}) do
+            if SMODS.has_enhancement(playing_card, 'm_wild') then
+                return true
+            end
+        end
+        return false
+    end
+}
+
 -- The Burned Grey
 SMODS.Joker {
     key = "burned",
@@ -988,14 +1143,14 @@ SMODS.Joker {
     config = {
         extra = {
             xmult_start = 0.75,
-            xmult = 0.5,
+            xmult = 0.75,
             xmult_mod = 0.25
         }
     },
     loc_txt = {
         name = "The Drowned Grey",
         text = {"{X:mult,C:white} X#3# {} Mult per hand played,", "reset if {C:red}score is on fire{}",
-                "at end of round", "{C:inactive}Currently: {X:mult,C:white} X#2#{}} {C:inactive}Mult"}
+                "at end of round", "{C:inactive}Currently: {X:mult,C:white} X#2#{} {C:inactive}Mult"}
     },
 
     loc_vars = function(self, info_queue, card)
