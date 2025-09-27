@@ -19,32 +19,44 @@ SMODS.Atlas {
 
 _G.STP = _G.STP or {}
 function _G.STP.ensure_cs_stack()
-  if G and not G.cs_stack and G.jokers and G.jokers.T then
-    local W = 4.9*G.CARD_W
-    local H = 0.95*G.CARD_H
-    G.cs_stack = CardArea(
-      G.jokers.T.x,
-      G.jokers.T.y - (G.jokers.T.h*2),
-      W, H,
-      {card_limit = 5, type = 'cs_stack', highlight_limit = 0}
-    )
-  end
+    if G and not G.cs_stack and G.jokers and G.jokers.T then
+        local W = 4.9 * G.CARD_W
+        local H = 0.95 * G.CARD_H
+        G.cs_stack = CardArea(G.jokers.T.x, G.jokers.T.y - (G.jokers.T.h * 2), W, H, {
+            card_limit = 5,
+            type = 'cs_stack',
+            highlight_limit = 0
+        })
+    end
 end
 
 if not _G.STP._drew_hooked then
-  local _orig_draw_card = draw_card
-  function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-    if card and card.cs_eaten then
-      _G.STP.ensure_cs_stack()
-      if G.cs_stack then
-        return _orig_draw_card(from, G.cs_stack, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-      end
+    local _orig_draw_card = draw_card
+    function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+        if card and card.cs_eaten then
+            _G.STP.ensure_cs_stack()
+            if G.cs_stack then
+                return _orig_draw_card(from, G.cs_stack, percent, dir, sort, card, delay, mute, stay_flipped, vol,
+                    discarded_only)
+            end
+        end
+        return _orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
     end
-    return _orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-  end
-  _G.STP._drew_hooked = true
+    _G.STP._drew_hooked = true
 end
 
+function _G.STP_is_leftmost_beast(card)
+    if not (G and G.jokers and G.jokers.cards) then
+        return false
+    end
+    for _, j in ipairs(G.jokers.cards) do
+        local center = j.config and j.config.center
+        if center and center.key == 'j_beast' then
+            return j == card
+        end
+    end
+    return false
+end
 
 ------------PRINCESS DECK---------------------
 SMODS.Back {
@@ -941,29 +953,33 @@ SMODS.Joker {
     blueprint_compat = false,
     rarity = 3,
     cost = 8,
-    pos = { x = 1, y = 2 },
+    pos = {
+        x = 1,
+        y = 2
+    },
     eternal_compat = false,
     unlocked = true,
     discovered = false,
     atlas = 'SlayThePrincess',
-    config = { extra = {} },
+    config = {
+        extra = {}
+    },
 
     loc_txt = {
         name = "The Beast",
-        text = {
-            "If {C:attention}first hand{} of round has only {C:attention}1{} card,",
-            "consume it, {C:attention}temporarily{} removing it from your deck",
-            "When this Joker is sold or destroyed,",
-            "it returns {C:attention}all consumed cards{} to your hand"
-        }
+        text = {"If {C:attention}first hand{} of round has only {C:attention}1{} card,",
+                "consume it, {C:attention}temporarily{} removing it from your deck",
+                "When this Joker is sold or destroyed,", "it returns {C:attention}all consumed cards{} to your hand"}
     },
 
     calculate = function(self, card, context)
         if context.destroy_card and not context.blueprint then
-            if G.GAME and G.GAME.current_round
-               and (G.GAME.current_round.hands_played or 0) == 0
-               and context.full_hand and #context.full_hand == 1
-               and context.destroy_card == context.full_hand[1] then
+            if not _G.STP_is_leftmost_beast(card) then
+                return
+            end
+
+            if G.GAME and G.GAME.current_round and (G.GAME.current_round.hands_played or 0) == 0 and context.full_hand and
+                #context.full_hand == 1 and context.destroy_card == context.full_hand[1] then
 
                 local victim = context.full_hand[1]
 
@@ -971,35 +987,47 @@ SMODS.Joker {
                 if G.cs_stack then
                     local saved = copy_card(victim, nil, nil, G.playing_card)
                     saved.cs_eaten_saved = true
+                    saved.stp_beast_owner = card.GUID or tostring(card)
                     G.cs_stack:emplace(saved)
                     saved.states.visible = nil
-                    G.E_MANAGER:add_event(Event({func=function() saved:start_materialize(); return true end}))
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            saved:start_materialize();
+                            return true
+                        end
+                    }))
                 end
 
                 victim.cs_eaten = true
 
                 return {
                     message = 'Eaten',
-                    colour  = G.C.MULT,
-                    remove  = true
+                    colour = G.C.MULT,
+                    remove = true
                 }
             end
         end
     end,
 
     remove_from_deck = function(self, card, from_debuff)
-        if not (G.cs_stack and G.cs_stack.cards and #G.cs_stack.cards > 0) then return end
+        if not (G.cs_stack and G.cs_stack.cards and #G.cs_stack.cards > 0) then
+            return
+        end
+        local owner = card.GUID or tostring(card)
 
         local to_return = {}
         for _, c in ipairs(G.cs_stack.cards) do
-            if c.cs_eaten_saved then
+            if c.cs_eaten_saved and c.stp_beast_owner == owner then
                 table.insert(to_return, c)
             end
         end
-        if #to_return == 0 then return end
+        if #to_return == 0 then
+            return
+        end
 
         for _, c in ipairs(to_return) do
             c.cs_eaten_saved = nil
+            c.stp_beast_owner = nil
             c.cs_eaten = nil
             if c.area == G.cs_stack then
                 G.cs_stack:remove_card(c)
@@ -1010,10 +1038,18 @@ SMODS.Joker {
             table.insert(G.playing_cards, c)
             G.hand:emplace(c)
             c.states.visible = nil
-            G.E_MANAGER:add_event(Event({func=function() c:start_materialize(); return true end}))
+            G.E_MANAGER:add_event(Event({
+                func = function()
+                    c:start_materialize();
+                    return true
+                end
+            }))
         end
 
-        SMODS.calculate_effect({ message = 'Regurgitated', colour = G.C.PURPLE }, card)
+        SMODS.calculate_effect({
+            message = 'Regurgitated',
+            colour = G.C.PURPLE
+        }, card)
     end
 }
 
