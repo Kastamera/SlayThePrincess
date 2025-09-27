@@ -7,7 +7,13 @@
 ----------------------------------------------
 ------------MOD CODE -------------------------
 function SMODS.INIT.SlayThePrincess()
+    local function hex_to_rgb(hex)
+        hex = hex:gsub("#", "")
+        return {tonumber("0x" .. hex:sub(1, 2)) / 255, tonumber("0x" .. hex:sub(3, 4)) / 255,
+                tonumber("0x" .. hex:sub(5, 6)) / 255, 1}
+    end
 
+    G.ARGS.LOC_COLOURS["mint"] = hex_to_rgb("CFFFF6")
 end
 
 SMODS.Atlas {
@@ -43,6 +49,22 @@ if not _G.STP._drew_hooked then
         return _orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
     end
     _G.STP._drew_hooked = true
+end
+
+if not _G.STP then _G.STP = {} end
+if not _G.STP._can_highlight_hooked then
+  local _orig_can_highlight = CardArea.can_highlight
+
+  function CardArea:can_highlight(card, ...)
+    if self == G.hand and card and SMODS and SMODS.has_enhancement then
+      if SMODS.has_enhancement(card, 'm_stp_chained') then
+        return false
+      end
+    end
+    return _orig_can_highlight(self, card, ...)
+  end
+
+  _G.STP._can_highlight_hooked = true
 end
 
 function _G.STP_is_leftmost_beast(card)
@@ -88,14 +110,14 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_beast"
+                        key = "j_prisoner"
                     }
                     SMODS.add_card {
-                        key = "j_beast"
+                        key = "j_cage"
                     }
-                    -- SMODS.add_card {
-                    --    key = "c_cryptid"
-                    -- }
+                    SMODS.add_card {
+                        key = "j_madness"
+                    }
                 end
                 return true
             end
@@ -116,6 +138,28 @@ SMODS.Rarity {
     },
     loc_txt = {
         name = "Pristine"
+    }
+}
+
+-- Chained
+SMODS.Enhancement {
+    key = 'stp_chained',
+    atlas = "SlayThePrincess",
+    pos = {
+        x = 6,
+        y = 4
+    },
+    config = {
+        xmult = 1.5
+    },
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.xmult}
+        }
+    end,
+    loc_txt = {
+        name = "Chained",
+        text = {"{C:red}Cannot be selected{}", "Each played card with", "this card's rank gives", "{X:mult,C:white} X#1#{} Mult when scored"}
     }
 }
 
@@ -596,8 +640,8 @@ SMODS.Joker {
     key = "prisoner",
     pool = "joker",
     blueprint_compat = true,
-    rarity = 1,
-    cost = 5,
+    rarity = 2,
+    cost = 6,
     pos = {
         x = 3,
         y = 1
@@ -638,10 +682,11 @@ SMODS.Joker {
     remove_from_deck = function(self, card, from_debuff)
         if card.ability.extra.destroyedstate == true then
             print(card.stickers)
-            SMODS.add_card {
+            head_card = SMODS.add_card {
                 key = "j_head",
                 edition = card.edition
             }
+            head_card.ability.extra.turns = head_card.ability.extra.max_turns
         end
     end
 }
@@ -663,31 +708,136 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 10,
-            destroyedstate = true
+            mult = 5,
+            turns = 10,
+            max_turns = 10
         }
     },
     loc_txt = {
         name = "The Head",
-        text = {"{C:red}+#1#{} Mult", "turns into The Head", "when destroyed"}
+        text = {"{C:red}+#1#{} Mult, turns", "into {C:mint}The Cage{}", "in {C:attention}#2# turns{}"}
     },
 
     loc_vars = function(self, info_queue, card)
         return {
-            vars = {card.ability.extra.mult, card.ability.extra.destroyedstate}
+            vars = {card.ability.extra.mult, card.ability.extra.turns, card.ability.extra.max_turns}
         }
     end,
 
     calculate = function(self, card, context)
-        if context.selling_self and not context.blueprint then
-            card.ability.extra.destroyedstate = false
-        end
-
         if context.joker_main then
             return {
                 mult = card.ability.extra.mult
             }
         end
+
+        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
+            card.ability.extra.turns = card.ability.extra.turns - 1
+            if card.ability.extra.turns == 0 then
+                card.ability.extra.turns = card.ability.extra.max_turns
+                SMODS.add_card {
+                    key = "j_cage",
+                    edition = card.edition
+                }
+                SMODS.destroy_cards(card, nil, nil, true)
+            end
+        end
+    end,
+
+    in_pool = function(self, args)
+        return false
+    end
+}
+
+-- The Cage
+SMODS.Joker {
+    key = "cage",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = "stp_pristine",
+    cost = 14,
+    pos = {
+        x = 0,
+        y = 4
+    },
+    eternal_compat = false,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            mod_conv = 'm_stp_chained',
+            chain_number = 3
+        }
+    },
+    loc_txt = {
+        name = "The Cage",
+        text = {"When the round starts, add", "{C:attention}chained{} to #1# random cards", "in your hand, removes",
+                "{C:attention}chained{} from all cards", "at end of round"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        info_queue[#info_queue + 1] = G.P_CENTERS.m_stp_chained
+        return {
+            vars = {card.ability.extra.chain_number}
+        }
+    end,
+
+    _reset_chains = function()
+        if not G.playing_cards then return end
+        for _, c in ipairs(G.playing_cards or {}) do
+            if SMODS.has_enhancement(c, 'm_stp_chained') then
+                c:set_ability('c_base', nil, true)
+            end
+        end
+        return
+    end,
+
+    calculate = function(self, card, context)
+        if context.first_hand_drawn then
+            local chained_cards = {}
+            local temp_hand = {}
+
+            for _, playing_card in ipairs(G.hand.cards) do
+                temp_hand[#temp_hand + 1] = playing_card
+            end
+            table.sort(temp_hand, function(a, b)
+                return not a.playing_card or not b.playing_card or a.playing_card < b.playing_card
+            end)
+
+            pseudoshuffle(temp_hand, 'cage')
+
+            for i = 1, card.ability.extra.chain_number do
+                if i > #temp_hand then
+                    break
+                end
+                chained_cards[#chained_cards + 1] = temp_hand[i]
+            end
+
+            G.E_MANAGER:add_event(Event({
+                trigger = 'after',
+                delay = 0.4,
+                func = function()
+                    play_sound('tarot1')
+                    card:juice_up(0.3, 0.5)
+                    return true
+                end
+            }))
+
+            for _, c in ipairs(chained_cards) do
+                c:set_ability(card.ability.extra.mod_conv)
+            end
+
+            delay(0.5)
+        end
+
+        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
+            self._reset_chains()
+        end
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        self._reset_chains()
     end,
 
     in_pool = function(self, args)
