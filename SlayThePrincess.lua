@@ -17,6 +17,35 @@ SMODS.Atlas {
     py = 95
 }
 
+_G.STP = _G.STP or {}
+function _G.STP.ensure_cs_stack()
+  if G and not G.cs_stack and G.jokers and G.jokers.T then
+    local W = 4.9*G.CARD_W
+    local H = 0.95*G.CARD_H
+    G.cs_stack = CardArea(
+      G.jokers.T.x,
+      G.jokers.T.y - (G.jokers.T.h*2),
+      W, H,
+      {card_limit = 5, type = 'cs_stack', highlight_limit = 0}
+    )
+  end
+end
+
+if not _G.STP._drew_hooked then
+  local _orig_draw_card = draw_card
+  function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+    if card and card.cs_eaten then
+      _G.STP.ensure_cs_stack()
+      if G.cs_stack then
+        return _orig_draw_card(from, G.cs_stack, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+      end
+    end
+    return _orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+  end
+  _G.STP._drew_hooked = true
+end
+
+
 ------------PRINCESS DECK---------------------
 SMODS.Back {
     name = "Princess Deck",
@@ -47,11 +76,11 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_den"
+                        key = "j_beast"
                     }
-                    --SMODS.add_card {
-                    --    key = "j_beast"
-                    --}
+                    SMODS.add_card {
+                        key = "j_beast"
+                    }
                     -- SMODS.add_card {
                     --    key = "c_cryptid"
                     -- }
@@ -906,65 +935,87 @@ SMODS.Joker {
 }
 
 -- The Beast
---SMODS.Joker {
---    key = "beast",
---    pool = "joker",
---    blueprint_compat = false,
---    rarity = 3,
---    cost = 8,
---    pos = {
---        x = 1,
---        y = 2
---    },
---    eternal_compat = false,
---    unlocked = true,
---    discovered = false,
---    atlas = 'SlayThePrincess',
---    config = {
---        extra = {
---            cards = {}
---        }
---    },
---    loc_txt = {
---        name = "The Beast",
---        text = {"If {C:attention}first hand{} of round has only {C:attention}1{} card,",
---                "this Joker consumes it, {C:attention}temporarily{}", "removing it from your deck",
---                "When this Joker is sold or destroyed,", "it returns {C:attention}all consumed cards{} to your hand"}
---    },
---
---    loc_vars = function(self, info_queue, card)
---        return {
---            vars = {card.ability.extra.cards}
---        }
---    end,
---
---    calculate = function(self, card, context)
---        if context.destroy_card and not context.blueprint then
---            if #context.full_hand == 1 and context.destroy_card == context.full_hand[1] and
---                G.GAME.current_round.hands_played == 0 then
---                card.ability.extra.cards[#card.ability.extra.cards + 1] =
---                    copy_card(context.full_hand[1], nil, nil, G.playing_card)
---                return {
---                    message = 'Eaten',
---                    colour = G.C.MULT,
---                    remove = true
---                }
---            end
---        end
---    end,
---
---    remove_from_deck = function(self, card, from_debuff)
---        if #card.ability.extra.cards == 0 then
---            return
---        end
---        for _, c in card.ability.extra.cards do
---            c:add_to_deck()
---            G.deck.config.card_limit = G.deck.config.card_limit + 1
---            table.insert(G.playing_cards, c)
---            G.hand:emplace(c)
---        end
---    end
---}
+SMODS.Joker {
+    key = "beast",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = 3,
+    cost = 8,
+    pos = { x = 1, y = 2 },
+    eternal_compat = false,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = { extra = {} },
+
+    loc_txt = {
+        name = "The Beast",
+        text = {
+            "If {C:attention}first hand{} of round has only {C:attention}1{} card,",
+            "consume it, {C:attention}temporarily{} removing it from your deck",
+            "When this Joker is sold or destroyed,",
+            "it returns {C:attention}all consumed cards{} to your hand"
+        }
+    },
+
+    calculate = function(self, card, context)
+        if context.destroy_card and not context.blueprint then
+            if G.GAME and G.GAME.current_round
+               and (G.GAME.current_round.hands_played or 0) == 0
+               and context.full_hand and #context.full_hand == 1
+               and context.destroy_card == context.full_hand[1] then
+
+                local victim = context.full_hand[1]
+
+                _G.STP.ensure_cs_stack()
+                if G.cs_stack then
+                    local saved = copy_card(victim, nil, nil, G.playing_card)
+                    saved.cs_eaten_saved = true
+                    G.cs_stack:emplace(saved)
+                    saved.states.visible = nil
+                    G.E_MANAGER:add_event(Event({func=function() saved:start_materialize(); return true end}))
+                end
+
+                victim.cs_eaten = true
+
+                return {
+                    message = 'Eaten',
+                    colour  = G.C.MULT,
+                    remove  = true
+                }
+            end
+        end
+    end,
+
+    remove_from_deck = function(self, card, from_debuff)
+        if not (G.cs_stack and G.cs_stack.cards and #G.cs_stack.cards > 0) then return end
+
+        local to_return = {}
+        for _, c in ipairs(G.cs_stack.cards) do
+            if c.cs_eaten_saved then
+                table.insert(to_return, c)
+            end
+        end
+        if #to_return == 0 then return end
+
+        for _, c in ipairs(to_return) do
+            c.cs_eaten_saved = nil
+            c.cs_eaten = nil
+            if c.area == G.cs_stack then
+                G.cs_stack:remove_card(c)
+            end
+
+            c:add_to_deck()
+            G.deck.config.card_limit = G.deck.config.card_limit + 1
+            table.insert(G.playing_cards, c)
+            G.hand:emplace(c)
+            c.states.visible = nil
+            G.E_MANAGER:add_event(Event({func=function() c:start_materialize(); return true end}))
+        end
+
+        SMODS.calculate_effect({ message = 'Regurgitated', colour = G.C.PURPLE }, card)
+    end
+}
 
 -- The Den
 SMODS.Joker {
@@ -990,7 +1041,7 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Den",
-        text = {"{C:attention}+#3#{} hand size,", "{C:attention}+#2#{} consumable slots", "{C:red}#1#{} Joker Slot"}
+        text = {"{C:attention}+#3#{} hand size", "{C:attention}+#2#{} consumable slots", "{C:red}#1#{} Joker Slot"}
     },
 
     loc_vars = function(self, info_queue, card)
