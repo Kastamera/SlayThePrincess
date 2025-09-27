@@ -112,10 +112,7 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_hanging_chad"
-                    }
-                    SMODS.add_card {
-                        key = "j_cage"
+                        key = "j_beast"
                     }
                 end
                 return true
@@ -662,7 +659,7 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Prisoner",
-        text = {"{C:red}+#1#{} Mult", "turns into {C:attention}The Head{}", "when destroyed"}
+        text = {"{C:red}+#1#{} Mult, turns", "into {C:attention}The Head{}", "when destroyed"}
     },
 
     loc_vars = function(self, info_queue, card)
@@ -719,7 +716,7 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Head",
-        text = {"{C:red}+#1#{} Mult, turns", "into {C:mint}The Cage{}", "in {C:attention}#2# turns{}"}
+        text = {"{C:red}+#1#{} Mult, turns", "into {C:mint}The Cage{}", "in {C:attention}#2# rounds{}"}
     },
 
     loc_vars = function(self, info_queue, card)
@@ -1300,7 +1297,7 @@ SMODS.Joker {
     config = {
         extra = {
             xmult = 1,
-            xmult_mod = 0.75
+            xmult_mod = 0.1
         }
     },
     loc_txt = {
