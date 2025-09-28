@@ -170,6 +170,9 @@ SMODS.Enhancement {
     end
 }
 
+------------BOOSTERS---------------------
+
+
 ------------JOKERS---------------------
 -- The Princess
 SMODS.Joker {
