@@ -597,7 +597,7 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            odds = 10
+            odds = 6
         }
     },
     loc_txt = {
@@ -747,7 +747,7 @@ SMODS.Joker {
         end
     end,
 
-    remove_from_deck = function(self, card, from_debuff)
+    remove_from_deck = function(self, card)
         if card.ability.extra.destroyedstate == true then
             print(card.stickers)
             head_card = SMODS.add_card {
@@ -840,8 +840,8 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Cage",
-        text = {"When the round starts, add", "{C:attention}chained{} to #1# random cards", "in your hand, removes",
-                "{C:attention}chained{} from all cards", "at end of round"}
+        text = {"When the round starts, add", "{C:attention}Chained{} to #1# random cards", "in your hand, removes",
+                "{C:attention}Chained{} from all cards", "at end of round"}
     },
 
     loc_vars = function(self, info_queue, card)
@@ -992,7 +992,7 @@ SMODS.Joker {
         end
     end,
 
-    remove_from_deck = function(self, card, from_debuff)
+    remove_from_deck = function(self, card)
         G.E_MANAGER:add_event(Event {
             func = function()
                 self._state().sold = self._state().sold + 1
@@ -1256,7 +1256,7 @@ SMODS.Joker {
         end
     end,
 
-    remove_from_deck = function(self, card, from_debuff)
+    remove_from_deck = function(self, card)
         if not (G.cs_stack and G.cs_stack.cards and #G.cs_stack.cards > 0) then
             return
         end
@@ -1705,7 +1705,7 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.first_hand_drawn and not context.blueprint then
+        if context.setting_blind and not context.blueprint then
             card.ability.extra.hand_size = self._count_hand_increase()
             G.hand:change_size(card.ability.extra.hand_size)
             SMODS.draw_cards(card.ability.extra.hand_size)
@@ -1717,7 +1717,7 @@ SMODS.Joker {
         end
     end,
 
-    remove_from_deck = function(self, card, from_debuff)
+    remove_from_deck = function(self, card)
         G.hand:change_size(-card.ability.extra.hand_size)
     end
 }
