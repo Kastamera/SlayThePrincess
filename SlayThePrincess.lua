@@ -112,13 +112,19 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_wraith"
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
-                        key = "j_hanging_chad"
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
-                        key = "c_hanged_man"
+                        key = "j_deconstructed"
+                    }
+                    SMODS.add_card {
+                        key = "j_hologram"
+                    }
+                    SMODS.add_card {
+                        key = "c_cryptid"
                     }
                 end
                 return true
@@ -432,7 +438,8 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Wraith",
-        text = {"Played {C:attention}Queens{} give", "{C:mult}+#1#{} Mult when scored,", "increased by {C:mult}+#2#{} Mult for", "each {C:attention}Queen{} destroyed"}
+        text = {"Played {C:attention}Queens{} give", "{C:mult}+#1#{} Mult when scored,",
+                "increased by {C:mult}+#2#{} Mult for", "each {C:attention}Queen{} destroyed"}
     },
 
     loc_vars = function(self, info_queue, card)
@@ -614,13 +621,16 @@ SMODS.Joker {
     end,
 
     calculate = function(self, card, context)
-        if context.playing_card_added then
+        if context.playing_card_added and not _G.STP_DAMSEL then
             for _, copied_card in ipairs(context.cards or {}) do
                 if copied_card.get_id and copied_card:get_id() == 12 then
                     local _card = copy_card(copied_card, nil, nil, G.playing_card)
                     _card:add_to_deck()
                     G.deck.config.card_limit = G.deck.config.card_limit + 1
                     table.insert(G.playing_cards, _card)
+                    _G.STP_DAMSEL = true
+                    playing_card_joker_effects({_card})
+                    _G.STP_DAMSEL = false
                     G.hand:emplace(_card)
                     _card.states.visible = nil
 
@@ -672,7 +682,7 @@ SMODS.Joker {
     },
 
     calculate = function(self, card, context)
-        if context.playing_card_added then
+        if context.playing_card_added and not _G.STP_DAMSEL then
             for _, copied_card in ipairs(context.cards or {}) do
                 if copied_card.get_id and copied_card:get_id() == 12 then
                     for i = 1, 2 do
@@ -680,6 +690,9 @@ SMODS.Joker {
                         _card:add_to_deck()
                         G.deck.config.card_limit = G.deck.config.card_limit + 1
                         table.insert(G.playing_cards, _card)
+                        _G.STP_DAMSEL = true
+                        playing_card_joker_effects({_card})
+                        _G.STP_DAMSEL = false
                         G.hand:emplace(_card)
                         _card.states.visible = nil
 
