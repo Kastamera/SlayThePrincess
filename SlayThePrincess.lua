@@ -112,13 +112,7 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_damsel"
-                    }
-                    SMODS.add_card {
-                        key = "j_damsel"
-                    }
-                    SMODS.add_card {
-                        key = "j_deconstructed"
+                        key = "j_cage"
                     }
                     SMODS.add_card {
                         key = "j_hologram"
@@ -901,8 +895,8 @@ SMODS.Joker {
                 trigger = 'after',
                 delay = 0.4,
                 func = function()
-                    play_sound('tarot1')
-                    card:juice_up(0.3, 0.5)
+                    play_sound('coin1', 0.2, 0.8)
+                    card:juice_up(0.1, 0.8)
                     return true
                 end
             }))
@@ -931,11 +925,19 @@ SMODS.Joker {
                                        G.P_CENTERS.m_stp_chained.config.xmult) or 1.5
                     local total_x = base_x ^ count
 
-                    return {
-                        message = 'Chained x' .. tostring(count),
-                        xmult = total_x,
-                        colour = G.C.XMULT,
+                    func = function()
+                        play_sound('multhit1', 0.9 + math.random() * 0.1, 0.8)
+                        card:juice_up(0.3, 0.5)
+                        return true
+                    end
+
+                    SMODS.calculate_effect({message = 'Chained x' .. tostring(count),
+                        colour = G.C.PURPLE,
                         message_card = scoring
+                    }, scoring)
+
+                    return {
+                        xmult = total_x,
                     }
                 end
             end
