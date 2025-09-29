@@ -172,7 +172,6 @@ SMODS.Enhancement {
 
 ------------BOOSTERS---------------------
 
-
 ------------JOKERS---------------------
 -- The Princess
 SMODS.Joker {
@@ -934,13 +933,14 @@ SMODS.Joker {
                         return true
                     end
 
-                    SMODS.calculate_effect({message = 'Chained x' .. tostring(count),
+                    SMODS.calculate_effect({
+                        message = 'Chained x' .. tostring(count),
                         colour = G.C.PURPLE,
                         message_card = scoring
                     }, scoring)
 
                     return {
-                        xmult = total_x,
+                        xmult = total_x
                     }
                 end
             end
@@ -1633,6 +1633,130 @@ SMODS.Joker {
                 chips = card.ability.extra.chips
             }
         end
+    end
+}
+
+-- The Arms Race
+SMODS.Joker {
+    key = "arms",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 3,
+    cost = 8,
+    pos = {
+        x = 1,
+        y = 4
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            chips = 0,
+            chip_mod = 25
+        }
+    },
+    loc_txt = {
+        name = "The Arms Race",
+        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after", "they score, then gain",
+                "{C:chips}+#2#{} Chips for each destroyed", "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.chips, card.ability.extra.chip_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.destroy_card and not context.blueprint then
+            for _, hand_card in ipairs(context.scoring_hand) do
+                if context.destroy_card == hand_card then
+                    local id = hand_card:get_id()
+                    if id == 11 or id == 13 then
+                        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod
+                        return {
+                            remove = true,
+                            message = localize('k_upgrade_ex'),
+                            colour = G.C.CHIPS,
+                            play_sound('slice1', 0.96 + math.random() * 0.08)
+                        }
+                    end
+                end
+            end
+        end
+        if context.joker_main then
+            return {
+                chips = card.ability.extra.chips
+            }
+        end
+    end,
+
+    in_pool = function(self, args)
+        return false
+    end
+}
+
+-- Mutually Assured Destruction
+SMODS.Joker {
+    key = "mutual",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 3,
+    cost = 8,
+    pos = {
+        x = 1,
+        y = 4
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            chips = 0,
+            chip_mod = 25
+        }
+    },
+    loc_txt = {
+        name = "Mutually Assured Destruction",
+        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after", "they score, then gain",
+                "{C:chips}+#2#{} Chips for each destroyed", "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.chips, card.ability.extra.chip_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.destroy_card and not context.blueprint then
+            for _, hand_card in ipairs(context.scoring_hand) do
+                if context.destroy_card == hand_card then
+                    local id = hand_card:get_id()
+                    if id == 11 or id == 13 then
+                        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod
+                        return {
+                            remove = true,
+                            message = localize('k_upgrade_ex'),
+                            colour = G.C.CHIPS,
+                            play_sound('slice1', 0.96 + math.random() * 0.08)
+                        }
+                    end
+                end
+            end
+        end
+        if context.joker_main then
+            return {
+                chips = card.ability.extra.chips
+            }
+        end
+    end,
+
+    in_pool = function(self, args)
+        return false
     end
 }
 
