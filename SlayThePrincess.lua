@@ -111,18 +111,10 @@ SMODS.Back {
                         force_stickers = true,
                         edition = "e_negative"
                     }
-                    SMODS.add_card {
-                        key = "j_razor"
+                    local head = SMODS.add_card {
+                        key = "j_head"
                     }
-                    SMODS.add_card {
-                        key = "c_immolate"
-                    }
-                    SMODS.add_card {
-                        key = "c_immolate"
-                    }
-                    SMODS.add_card {
-                        key = "c_immolate"
-                    }
+                    head.ability.extra.turns = 1
                 end
                 return true
             end
@@ -857,19 +849,20 @@ SMODS.Joker {
     config = {
         extra = {
             mod_conv = 'm_stp_chained',
-            chain_number = 3
+            chain_number = 3,
+            hand_size = 1
         }
     },
     loc_txt = {
         name = "The Cage",
-        text = {"When the round starts, add", "{C:attention}Chained{} to #1# random cards", "in your hand, removes",
+        text = {"{C:attention}+#2#{} hand size,", "When the round starts, add", "{C:attention}Chained{} to #1# random cards", "in your hand, removes",
                 "{C:attention}Chained{} from all cards", "at end of round"}
     },
 
     loc_vars = function(self, info_queue, card)
         info_queue[#info_queue + 1] = G.P_CENTERS.m_stp_chained
         return {
-            vars = {card.ability.extra.chain_number}
+            vars = {card.ability.extra.chain_number, card.ability.extra.hand_size}
         }
     end,
 
@@ -964,8 +957,12 @@ SMODS.Joker {
         end
     end,
 
+    add_to_deck = function(self, card, from_debuff)
+        G.hand:change_size(card.ability.extra.hand_size)
+    end,
     remove_from_deck = function(self, card, from_debuff)
         self._reset_chains()
+        G.hand:change_size(-card.ability.extra.hand_size)
     end,
 
     in_pool = function(self, args)
@@ -1809,7 +1806,6 @@ SMODS.Joker {
         return false
     end
 }
-
 
 -- The Tower
 SMODS.Joker {
