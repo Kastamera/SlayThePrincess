@@ -119,10 +119,18 @@ SMODS.Back {
                         force_stickers = true,
                         edition = "e_negative"
                     }
-                    local head = SMODS.add_card {
-                        key = "j_head"
+                    SMODS.add_card {
+                        key = "j_wraith"
                     }
-                    head.ability.extra.turns = 1
+                    SMODS.add_card {
+                        key = "j_hanging_chad"
+                    }
+                    SMODS.add_card {
+                        key = "c_hanged_man"
+                    }
+                    SMODS.add_card {
+                        key = "c_hanged_man"
+                    }
                 end
                 return true
             end
@@ -202,7 +210,7 @@ SMODS.ObjectType {
         ["j_razor"] = true,
         ["j_tower"] = true,
         ["j_apotheosis"] = true,
-        ["j_spectre"] = true,
+        ["j_spectre"] = true
     }
 }
 
@@ -233,7 +241,11 @@ SMODS.Booster {
         }
     end,
     ease_background_colour = function(self)
-        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+        ease_background_colour({
+            new_colour = HEX("857269"),
+            special_colour = HEX("ffd0a1"),
+            contrast = 3
+        })
     end,
     create_card = function(self, card, i)
         return SMODS.create_card({
@@ -274,7 +286,11 @@ SMODS.Booster {
         }
     end,
     ease_background_colour = function(self)
-        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+        ease_background_colour({
+            new_colour = HEX("857269"),
+            special_colour = HEX("ffd0a1"),
+            contrast = 3
+        })
     end,
     create_card = function(self, card, i)
         return SMODS.create_card({
@@ -315,7 +331,11 @@ SMODS.Booster {
         }
     end,
     ease_background_colour = function(self)
-        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+        ease_background_colour({
+            new_colour = HEX("857269"),
+            special_colour = HEX("ffd0a1"),
+            contrast = 3
+        })
     end,
     create_card = function(self, card, i)
         return SMODS.create_card({
@@ -357,7 +377,11 @@ SMODS.Booster {
         }
     end,
     ease_background_colour = function(self)
-        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+        ease_background_colour({
+            new_colour = HEX("857269"),
+            special_colour = HEX("ffd0a1"),
+            contrast = 3
+        })
     end,
     create_card = function(self, card, i)
         return SMODS.create_card({
@@ -587,7 +611,7 @@ SMODS.Joker {
     },
 
     _count_hand_increase = function()
-        local n = 0
+        local n = 10
         for _, c in ipairs(G.playing_cards or {}) do
             if c and c.get_id and c:get_id() == 12 then
                 n = n + 1
@@ -638,19 +662,19 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 4,
-            mult_mod = 4
+            dollars = 1,
+            dollars_mod = 1
         }
     },
     loc_txt = {
         name = "The Wraith",
-        text = {"Played {C:attention}Queens{} give", "{C:mult}+#1#{} Mult when scored,",
-                "increased by {C:mult}+#2#{} Mult for", "each {C:attention}Queen{} destroyed"}
+        text = {"Played {C:attention}Queens{} give", "{C:money}$#1#{} when scored,",
+                "increased by {C:money}+$#2#{} for", "each {C:attention}Queen{} destroyed"}
     },
 
     loc_vars = function(self, info_queue, card)
         return {
-            vars = {card.ability.extra.mult, card.ability.extra.mult_mod}
+            vars = {card.ability.extra.dollars, card.ability.extra.dollars_mod}
         }
     end,
 
@@ -663,19 +687,29 @@ SMODS.Joker {
                 end
             end
             if queens_destroyed > 0 then
-                card.ability.extra.mult = card.ability.extra.mult + queens_destroyed * card.ability.extra.mult_mod
+                card.ability.extra.dollars = card.ability.extra.dollars + queens_destroyed *
+                                                 card.ability.extra.dollars_mod
                 return {
                     remove = true,
                     message = localize('k_upgrade_ex'),
-                    colour = G.C.MULT
+                    colour = G.C.DOLLARS
                 }
             end
         end
 
         if context.individual and context.cardarea == G.play then
             if context.other_card:get_id() == 12 then
+                G.GAME.dollar_buffer = (G.GAME.dollar_buffer or 0) + card.ability.extra.dollars
                 return {
-                    mult = card.ability.extra.mult
+                    dollars = card.ability.extra.dollars,
+                    func = function()
+                        G.E_MANAGER:add_event(Event({
+                            func = function()
+                                G.GAME.dollar_buffer = 0
+                                return true
+                            end
+                        }))
+                    end
                 }
             end
         end
@@ -926,7 +960,7 @@ SMODS.Joker {
 SMODS.Joker {
     key = "prisoner",
     pool = "joker",
-    blueprint_compat = true,
+    blueprint_compat = false,
     rarity = 2,
     cost = 6,
     pos = {
@@ -939,18 +973,18 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 10,
+            dollars = 4,
             destroyedstate = true
         }
     },
     loc_txt = {
         name = "The Prisoner",
-        text = {"{C:red}+#1#{} Mult, turns", "into {C:attention}The Head{}", "when destroyed"}
+        text = {"Earn {C:money}$#1#{} at", "end of round, turns", "into {C:attention}The Head{}", "when destroyed"}
     },
 
     loc_vars = function(self, info_queue, card)
         return {
-            vars = {card.ability.extra.mult, card.ability.extra.destroyedstate}
+            vars = {card.ability.extra.dollars, card.ability.extra.destroyedstate}
         }
     end,
 
@@ -958,12 +992,10 @@ SMODS.Joker {
         if context.selling_self and not context.blueprint then
             card.ability.extra.destroyedstate = false
         end
+    end,
 
-        if context.joker_main then
-            return {
-                mult = card.ability.extra.mult
-            }
-        end
+    calc_dollar_bonus = function(self, card)
+        return card.ability.extra.dollars
     end,
 
     remove_from_deck = function(self, card)
@@ -982,7 +1014,7 @@ SMODS.Joker {
 SMODS.Joker {
     key = "head",
     pool = "joker",
-    blueprint_compat = true,
+    blueprint_compat = false,
     rarity = 1,
     cost = 5,
     pos = {
@@ -995,29 +1027,24 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 5,
+            dollars = 2,
             turns = 10,
             max_turns = 10
         }
     },
     loc_txt = {
         name = "The Head",
-        text = {"{C:red}+#1#{} Mult, turns", "into {C:mint}The Cage{}", "in {C:attention}#2# rounds{}"}
+        text = {"Earn {C:money}$#1#{} at end", "of round, turns", "into {C:mint}The Cage{}",
+                "in {C:attention}#2# rounds{}"}
     },
 
     loc_vars = function(self, info_queue, card)
         return {
-            vars = {card.ability.extra.mult, card.ability.extra.turns, card.ability.extra.max_turns}
+            vars = {card.ability.extra.dollars, card.ability.extra.turns, card.ability.extra.max_turns}
         }
     end,
 
     calculate = function(self, card, context)
-        if context.joker_main then
-            return {
-                mult = card.ability.extra.mult
-            }
-        end
-
         if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
             card.ability.extra.turns = card.ability.extra.turns - 1
             if card.ability.extra.turns == 0 then
@@ -1029,6 +1056,10 @@ SMODS.Joker {
                 SMODS.destroy_cards(card, nil, nil, true)
             end
         end
+    end,
+
+    calc_dollar_bonus = function(self, card)
+        return card.ability.extra.dollars
     end,
 
     in_pool = function(self, args)
