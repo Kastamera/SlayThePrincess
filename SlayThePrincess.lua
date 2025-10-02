@@ -273,63 +273,6 @@ SMODS.Joker {
     end
 }
 
--- The Spectre
-SMODS.Joker {
-    key = "spectre",
-    pool = "joker",
-    blueprint_compat = true,
-    rarity = 2,
-    cost = 6,
-    pos = {
-        x = 3,
-        y = 0
-    },
-    eternal_compat = true,
-    unlocked = true,
-    discovered = false,
-    atlas = 'SlayThePrincess',
-    loc_txt = {
-        name = "The Spectre",
-        text = {"Whenever you destroy a {C:attention}Queen{},", "create a {C:spectral}Spectral{} card."}
-    },
-
-    calculate = function(self, card, context)
-        if context.remove_playing_cards then
-            local queens_destroyed = 0
-            for _, removed_card in ipairs(context.removed) do
-                if removed_card:get_id() == 12 then
-                    queens_destroyed = queens_destroyed + 1
-                end
-            end
-            if queens_destroyed > 0 then
-                if #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
-                    spectrals_to_summon = math.min(queens_destroyed, G.consumeables.config.card_limit -
-                        #G.consumeables.cards + G.GAME.consumeable_buffer)
-                    G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + spectrals_to_summon
-                    G.E_MANAGER:add_event(Event({
-                        func = (function()
-                            for i = 1, spectrals_to_summon do
-                                SMODS.add_card {
-                                    set = 'Spectral'
-                                }
-                            end
-                            G.GAME.consumeable_buffer = 0
-                            return true
-                        end)
-                    }))
-                    return {
-                        message = localize('k_plus_spectral'),
-                        colour = G.C.SECONDARY_SET.Spectral
-                    }
-                end
-                return {
-                    remove = true
-                }
-            end
-        end
-    end
-}
-
 -- The Nightmare
 SMODS.Joker {
     key = "nightmare",
@@ -415,6 +358,68 @@ SMODS.Joker {
                 mult = card.ability.extra.mult
             }
         end
+    end
+}
+
+-- The Moment of Clarity
+SMODS.Joker {
+    key = "moment",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = 3,
+    cost = 8,
+    pos = {
+        x = 2,
+        y = 3
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            hand_size = 0
+        }
+    },
+
+    loc_txt = {
+        name = "The Moment of Clarity",
+        text = {"At start of round, gain", "+1 hand size for every",
+                "{C:attention}10 Queens{} in your {C:attention}full deck{},", "bonus lost at end of round",
+                "{C:inactive}Currently: +#1# hand size"}
+    },
+
+    _count_hand_increase = function()
+        local n = 0
+        for _, c in ipairs(G.playing_cards or {}) do
+            if c and c.get_id and c:get_id() == 12 then
+                n = n + 1
+            end
+        end
+        return math.floor(n / 10)
+    end,
+
+    loc_vars = function(self, info_queue, card)
+        return {
+            vars = {card.ability.extra.hand_size}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.setting_blind and not context.blueprint then
+            card.ability.extra.hand_size = self._count_hand_increase()
+            G.hand:change_size(card.ability.extra.hand_size)
+            SMODS.draw_cards(card.ability.extra.hand_size)
+        end
+
+        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
+            G.hand:change_size(-card.ability.extra.hand_size)
+            card.ability.extra.hand_size = 0
+        end
+    end,
+
+    remove_from_deck = function(self, card)
+        G.hand:change_size(-card.ability.extra.hand_size)
     end
 }
 
@@ -1080,69 +1085,6 @@ SMODS.Joker {
         if context.joker_main then
             return {
                 chips = card.ability.extra.chips
-            }
-        end
-    end
-}
-
--- The Tower
-SMODS.Joker {
-    key = "tower",
-    pool = "joker",
-    blueprint_compat = true,
-    rarity = 1,
-    cost = 5,
-    pos = {
-        x = 1,
-        y = 1
-    },
-    eternal_compat = true,
-    unlocked = true,
-    discovered = false,
-    atlas = 'SlayThePrincess',
-    config = {
-        extra = {
-            chips = 0,
-            chips_mod = 2
-        }
-    },
-    loc_txt = {
-        name = "The Tower",
-        text = {"All {C:attentiom}ranks{} lower than", "{C:attention}Queen{} are debuffed,",
-                "{C:chips}+#2#{} Chips for each debuffed", "card in your {C:attention}full deck",
-                "{C:inactive}(Currently {C:chips}+#1#{} {C:inactive}Chips)"}
-    },
-
-    _count_debuffed = function()
-        if not G.playing_cards then
-            return 0
-        end
-        local n = 0
-        for _, c in ipairs(G.playing_cards or {}) do
-            if c.debuff then
-                n = n + 1
-            end
-        end
-        return n
-    end,
-
-    loc_vars = function(self, info_queue, card)
-        card.ability.extra.chips = self._count_debuffed() * card.ability.extra.chips_mod
-        return {
-            vars = {card.ability.extra.chips, card.ability.extra.chips_mod}
-        }
-    end,
-
-    calculate = function(self, card, context)
-        if context.debuff_card and not context.blueprint and type(context.debuff_card:get_id()) == "number" and
-            context.debuff_card:get_id() < 12 then
-            return {
-                debuff = true
-            }
-        end
-        if context.joker_main then
-            return {
-                chips = self._count_debuffed() * card.ability.extra.chips_mod
             }
         end
     end
@@ -1868,6 +1810,70 @@ SMODS.Joker {
     end
 }
 
+
+-- The Tower
+SMODS.Joker {
+    key = "tower",
+    pool = "joker",
+    blueprint_compat = true,
+    rarity = 1,
+    cost = 5,
+    pos = {
+        x = 1,
+        y = 1
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            chips = 0,
+            chips_mod = 2
+        }
+    },
+    loc_txt = {
+        name = "The Tower",
+        text = {"All {C:attentiom}ranks{} lower than", "{C:attention}Queen{} are debuffed,",
+                "{C:chips}+#2#{} Chips for each debuffed", "card in your {C:attention}full deck",
+                "{C:inactive}(Currently {C:chips}+#1#{} {C:inactive}Chips)"}
+    },
+
+    _count_debuffed = function()
+        if not G.playing_cards then
+            return 0
+        end
+        local n = 0
+        for _, c in ipairs(G.playing_cards or {}) do
+            if c.debuff then
+                n = n + 1
+            end
+        end
+        return n
+    end,
+
+    loc_vars = function(self, info_queue, card)
+        card.ability.extra.chips = self._count_debuffed() * card.ability.extra.chips_mod
+        return {
+            vars = {card.ability.extra.chips, card.ability.extra.chips_mod}
+        }
+    end,
+
+    calculate = function(self, card, context)
+        if context.debuff_card and not context.blueprint and type(context.debuff_card:get_id()) == "number" and
+            context.debuff_card:get_id() < 12 then
+            return {
+                debuff = true
+            }
+        end
+        if context.joker_main then
+            return {
+                chips = self._count_debuffed() * card.ability.extra.chips_mod
+            }
+        end
+    end
+}
+
 -- The Apotheosis
 SMODS.Joker {
     key = "apotheosis",
@@ -1910,65 +1916,60 @@ SMODS.Joker {
     end
 }
 
--- The Moment of Clarity
+-- The Spectre
 SMODS.Joker {
-    key = "moment",
+    key = "spectre",
     pool = "joker",
-    blueprint_compat = false,
-    rarity = 3,
-    cost = 8,
+    blueprint_compat = true,
+    rarity = 2,
+    cost = 6,
     pos = {
-        x = 2,
-        y = 3
+        x = 3,
+        y = 0
     },
     eternal_compat = true,
     unlocked = true,
     discovered = false,
     atlas = 'SlayThePrincess',
-    config = {
-        extra = {
-            hand_size = 0
-        }
-    },
-
     loc_txt = {
-        name = "The Moment of Clarity",
-        text = {"At start of round, gain", "+1 hand size for every",
-                "{C:attention}10 Queens{} in your {C:attention}full deck{},", "bonus lost at end of round",
-                "{C:inactive}Currently: +#1# hand size"}
+        name = "The Spectre",
+        text = {"Whenever you destroy a {C:attention}Queen{},", "create a {C:spectral}Spectral{} card."}
     },
-
-    _count_hand_increase = function()
-        local n = 0
-        for _, c in ipairs(G.playing_cards or {}) do
-            if c and c.get_id and c:get_id() == 12 then
-                n = n + 1
-            end
-        end
-        return math.floor(n / 10)
-    end,
-
-    loc_vars = function(self, info_queue, card)
-        return {
-            vars = {card.ability.extra.hand_size}
-        }
-    end,
 
     calculate = function(self, card, context)
-        if context.setting_blind and not context.blueprint then
-            card.ability.extra.hand_size = self._count_hand_increase()
-            G.hand:change_size(card.ability.extra.hand_size)
-            SMODS.draw_cards(card.ability.extra.hand_size)
+        if context.remove_playing_cards then
+            local queens_destroyed = 0
+            for _, removed_card in ipairs(context.removed) do
+                if removed_card:get_id() == 12 then
+                    queens_destroyed = queens_destroyed + 1
+                end
+            end
+            if queens_destroyed > 0 then
+                if #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
+                    spectrals_to_summon = math.min(queens_destroyed, G.consumeables.config.card_limit -
+                        #G.consumeables.cards + G.GAME.consumeable_buffer)
+                    G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + spectrals_to_summon
+                    G.E_MANAGER:add_event(Event({
+                        func = (function()
+                            for i = 1, spectrals_to_summon do
+                                SMODS.add_card {
+                                    set = 'Spectral'
+                                }
+                            end
+                            G.GAME.consumeable_buffer = 0
+                            return true
+                        end)
+                    }))
+                    return {
+                        message = localize('k_plus_spectral'),
+                        colour = G.C.SECONDARY_SET.Spectral
+                    }
+                end
+                return {
+                    remove = true
+                }
+            end
         end
-
-        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
-            G.hand:change_size(-card.ability.extra.hand_size)
-            card.ability.extra.hand_size = 0
-        end
-    end,
-
-    remove_from_deck = function(self, card)
-        G.hand:change_size(-card.ability.extra.hand_size)
     end
 }
 
