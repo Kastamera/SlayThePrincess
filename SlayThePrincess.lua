@@ -23,6 +23,13 @@ SMODS.Atlas {
     py = 95
 }
 
+SMODS.Atlas {
+    key = "VesselPack",
+    path = "PrincessPacks.png",
+    px = 71,
+    py = 95
+}
+
 _G.STP = _G.STP or {}
 function _G.STP.ensure_cs_stack()
     if G and not G.cs_stack and G.jokers and G.jokers.T then
@@ -98,7 +105,8 @@ SMODS.Back {
     loc_txt = {
         name = "Princess Deck",
         text = {"Start with {C:red}level 0{} {C:attention}poker hands{} and",
-                "a {C:dark_edition}Negative{} {C:attention}Eternal{} {C:purple}The Princess{}."}
+                "a {C:dark_edition}Negative{} {C:attention}Eternal{} {C:purple}The Princess{}",
+                "{C:attention}Vessel Packs{} may appear in the shop"}
     },
 
     apply = function(self)
@@ -123,6 +131,8 @@ SMODS.Back {
         for poker_hand_key, _ in pairs(G.GAME.hands) do
             SMODS.smart_level_up_hand(nil, poker_hand_key, true, -1)
         end
+
+        G.GAME.pool_flags.stp_vessel_packs = true
     end
 }
 
@@ -165,7 +175,202 @@ SMODS.Enhancement {
     end
 }
 
+SMODS.ObjectType {
+    object_type = "ObjectType",
+    key = "PRINCESSJKR",
+    default = "j_jonkler",
+    cards = {
+        ["j_princess"] = true,
+        ["j_jonkler"] = true,
+        ["j_nightmare"] = true,
+        ["j_moment"] = true,
+        ["j_wraith"] = true,
+        ["j_witch"] = true,
+        ["j_thorn"] = true,
+        ["j_damsel"] = true,
+        ["j_deconstructed"] = true,
+        ["j_prisoner"] = true,
+        ["j_adversary"] = true,
+        ["j_eye"] = true,
+        ["j_fury"] = true,
+        ["j_beast"] = true,
+        ["j_den"] = true,
+        ["j_wild"] = true,
+        ["j_burned"] = true,
+        ["j_drowned"] = true,
+        ["j_stranger"] = true,
+        ["j_razor"] = true,
+        ["j_tower"] = true,
+        ["j_apotheosis"] = true,
+        ["j_spectre"] = true,
+    }
+}
+
 ------------BOOSTERS---------------------
+SMODS.Booster {
+    key = "stp_vessel_normal_1",
+    weight = 1,
+    kind = 'stp_vessel_pack',
+    cost = 4,
+    pos = {
+        x = 0,
+        y = 0
+    },
+    atlas = "VesselPack",
+    config = {
+        extra = 2,
+        choose = 1
+    },
+    group_key = "stp_vessel_pack",
+    loc_txt = {
+        name = "Vessel Pack",
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+    },
+    loc_vars = function(self, info_queue, card)
+        local cfg = (card and card.ability) or self.config
+        return {
+            vars = {cfg.choose, cfg.extra}
+        }
+    end,
+    ease_background_colour = function(self)
+        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+    end,
+    create_card = function(self, card, i)
+        return SMODS.create_card({
+            set = 'PRINCESSJKR',
+            area = G.pack_cards,
+            key_append = 'stp'
+        })
+    end,
+
+    in_pool = function(self, args)
+        return G.GAME.pool_flags.stp_vessel_packs
+    end
+}
+
+SMODS.Booster {
+    key = "stp_vessel_normal_2",
+    weight = 1,
+    kind = 'stp_vessel_pack',
+    cost = 4,
+    pos = {
+        x = 1,
+        y = 0
+    },
+    atlas = "VesselPack",
+    config = {
+        extra = 2,
+        choose = 1
+    },
+    group_key = "stp_vessel_pack",
+    loc_txt = {
+        name = "Vessel Pack",
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+    },
+    loc_vars = function(self, info_queue, card)
+        local cfg = (card and card.ability) or self.config
+        return {
+            vars = {cfg.choose, cfg.extra}
+        }
+    end,
+    ease_background_colour = function(self)
+        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+    end,
+    create_card = function(self, card, i)
+        return SMODS.create_card({
+            set = 'PRINCESSJKR',
+            area = G.pack_cards,
+            key_append = 'stp'
+        })
+    end,
+
+    in_pool = function(self, args)
+        return G.GAME.pool_flags.stp_vessel_packs
+    end
+}
+
+SMODS.Booster {
+    key = "stp_vessel_jumbo_1",
+    weight = 1,
+    kind = 'stp_vessel_pack',
+    cost = 6,
+    pos = {
+        x = 2,
+        y = 0
+    },
+    atlas = "VesselPack",
+    config = {
+        extra = 4,
+        choose = 1
+    },
+    group_key = "stp_vessel_pack",
+    loc_txt = {
+        name = "Jumbo Vessel Pack",
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+    },
+    loc_vars = function(self, info_queue, card)
+        local cfg = (card and card.ability) or self.config
+        return {
+            vars = {cfg.choose, cfg.extra}
+        }
+    end,
+    ease_background_colour = function(self)
+        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+    end,
+    create_card = function(self, card, i)
+        return SMODS.create_card({
+            set = 'PRINCESSJKR',
+            area = G.pack_cards,
+            key_append = 'stp'
+        })
+    end,
+
+    in_pool = function(self, args)
+        return G.GAME.pool_flags.stp_vessel_packs
+    end
+}
+
+SMODS.Booster {
+    key = "stp_vessel_mega_1",
+    weight = 0.2,
+    kind = 'stp_vessel_pack',
+    cost = 8,
+    pos = {
+        x = 3,
+        y = 0
+    },
+    atlas = "VesselPack",
+    config = {
+        extra = 4,
+        choose = 2
+    },
+    group_key = "stp_vessel_pack",
+    loc_txt = {
+        name = "Mega Vessel Pack",
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        local cfg = (card and card.ability) or self.config
+        return {
+            vars = {cfg.choose, cfg.extra}
+        }
+    end,
+    ease_background_colour = function(self)
+        ease_background_colour({ new_colour = HEX("857269"), special_colour = HEX("ffd0a1"), contrast = 3 })
+    end,
+    create_card = function(self, card, i)
+        return SMODS.create_card({
+            set = 'PRINCESSJKR',
+            area = G.pack_cards,
+            key_append = 'stp'
+        })
+    end,
+
+    in_pool = function(self, args)
+        return G.GAME.pool_flags.stp_vessel_packs
+    end
+}
 
 ------------JOKERS---------------------
 -- The Princess
@@ -855,7 +1060,8 @@ SMODS.Joker {
     },
     loc_txt = {
         name = "The Cage",
-        text = {"{C:attention}+#2#{} hand size,", "When the round starts, add", "{C:attention}Chained{} to #1# random cards", "in your hand, removes",
+        text = {"{C:attention}+#2#{} hand size,", "When the round starts, add",
+                "{C:attention}Chained{} to #1# random cards", "in your hand, removes",
                 "{C:attention}Chained{} from all cards", "at end of round"}
     },
 
