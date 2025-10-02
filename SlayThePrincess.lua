@@ -112,13 +112,16 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_cage"
+                        key = "j_razor"
                     }
                     SMODS.add_card {
-                        key = "j_hologram"
+                        key = "c_immolate"
                     }
                     SMODS.add_card {
-                        key = "c_cryptid"
+                        key = "c_immolate"
+                    }
+                    SMODS.add_card {
+                        key = "c_immolate"
                     }
                 end
                 return true
@@ -190,19 +193,24 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 0
+            mult = 0,
+            mult_mod = 4
         }
     },
     loc_txt = {
         name = "The Princess",
-        text = {"{C:red}+1{} Mult for each {C:attention}Queen{}", "in your {C:attention}full deck{}",
+        text = {"{C:red}+#2#{} Mult for each", "{C:attention}Princess Joker{} you have",
                 "{C:inactive}(Currently {C:red}+#1#{C:inactive} Mult)"}
     },
 
-    _count_queens = function()
+    _count_princesses = function()
         local n = 0
-        for _, c in ipairs(G.playing_cards or {}) do
-            if c and c.get_id and c:get_id() == 12 then
+        if not G.jokers then
+            return 1
+        end
+        for _, j in ipairs(G.jokers.cards or {}) do
+            local center = j.config and j.config.center
+            if center and center.atlas == 'SlayThePrincess' then
                 n = n + 1
             end
         end
@@ -210,16 +218,16 @@ SMODS.Joker {
     end,
 
     loc_vars = function(self, info_queue, card)
-        card.ability.extra.mult = self._count_queens()
+        card.ability.extra.mult = self._count_princesses() * card.ability.extra.mult_mod
         return {
-            vars = {card.ability.extra.mult}
+            vars = {card.ability.extra.mult, card.ability.extra.mult_mod}
         }
     end,
 
     calculate = function(self, card, context)
         if context.joker_main then
             return {
-                mult = self._count_queens()
+                mult = self._count_princesses() * card.ability.extra.mult_mod
             }
         end
     end
