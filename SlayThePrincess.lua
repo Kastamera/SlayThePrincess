@@ -1595,7 +1595,7 @@ SMODS.Joker {
     cost = 8,
     pos = {
         x = 2,
-        y = 0
+        y = 4
     },
     eternal_compat = true,
     unlocked = true,
@@ -1603,42 +1603,82 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            chips = 0,
-            chip_mod = 25
+            cards_destroyed = 0,
+            face_destroyed = 0,
+            destroyed_for_upgrade = 8,
+            mult = 20,
+            odds = 8
         }
     },
     loc_txt = {
         name = "The Razor",
-        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after", "they score, then gain",
-                "{C:chips}+#2#{} Chips for each destroyed", "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+        text = {"{C:red}+#6#{} Mult", "{C:green}#1# in #2#{} chance to {C:attention}destroy{}",
+                "a random Joker at end of round", "{s:0.8}Upgrades after #5# playing cards are destroyed",
+                "{C:inactive}(Currently #3# playing cards destroyed)"}
     },
 
     loc_vars = function(self, info_queue, card)
+        local numerator, denominator = SMODS.get_probability_vars(card, 1, card.ability.extra.odds, 'stp_razor')
+
         return {
-            vars = {card.ability.extra.chips, card.ability.extra.chip_mod}
+            vars = {numerator, denominator, card.ability.extra.cards_destroyed, card.ability.extra.face_destroyed,
+                    card.ability.extra.destroyed_for_upgrade, card.ability.extra.mult}
         }
     end,
 
     calculate = function(self, card, context)
-        if context.destroy_card and not context.blueprint then
-            for _, hand_card in ipairs(context.scoring_hand) do
-                if context.destroy_card == hand_card then
-                    local id = hand_card:get_id()
-                    if id == 11 or id == 13 then
-                        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod
-                        return {
-                            remove = true,
-                            message = localize('k_upgrade_ex'),
-                            colour = G.C.CHIPS,
-                            play_sound('slice1', 0.96 + math.random() * 0.08)
-                        }
+        if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
+            if SMODS.pseudorandom_probability(card, 'stp_razor', 1, card.ability.extra.odds) then
+                local destructable_jokers = {}
+                for i = 1, #G.jokers.cards do
+                    if G.jokers.cards[i] ~= card and not SMODS.is_eternal(G.jokers.cards[i], card) and
+                        not G.jokers.cards[i].getting_sliced then
+                        destructable_jokers[#destructable_jokers + 1] = G.jokers.cards[i]
                     end
+                end
+                local joker_to_destroy = pseudorandom_element(destructable_jokers, 'stp_razor')
+
+                if joker_to_destroy then
+                    joker_to_destroy.getting_sliced = true
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            joker_to_destroy:start_dissolve({G.C.RED}, nil, 1.6)
+                            play_sound('slice1', 0.96 + math.random() * 0.08)
+                            return true
+                        end
+                    }))
                 end
             end
         end
+
+        if context.remove_playing_cards and not context.blueprint then
+            local removed_card_count = #context.removed
+            local removed_face_card_count = 0
+            if removed_card_count > 0 then
+                for _, c in ipairs(context.removed) do
+                    card.ability.extra.cards_destroyed = card.ability.extra.cards_destroyed + 1
+                    local id = c:get_id()
+                    if id == 11 or id == 13 then
+                        card.ability.extra.face_destroyed = card.ability.extra.face_destroyed + 1
+                        removed_face_card_count = removed_face_card_count + 1
+                    end
+                end
+            end
+
+            if card.ability.extra.cards_destroyed >= card.ability.extra.destroyed_for_upgrade then
+                local upgraded = SMODS.add_card {
+                    key = "j_arms",
+                    edition = card.edition
+                }
+                upgraded.ability.extra.cards_destroyed = card.ability.extra.cards_destroyed - removed_card_count
+                upgraded.ability.extra.face_destroyed = card.ability.extra.face_destroyed - removed_face_card_count
+                SMODS.destroy_cards(card, nil, nil, true)
+            end
+        end
+
         if context.joker_main then
             return {
-                chips = card.ability.extra.chips
+                mult = card.ability.extra.mult
             }
         end
     end
@@ -1652,8 +1692,8 @@ SMODS.Joker {
     rarity = 3,
     cost = 8,
     pos = {
-        x = 1,
-        y = 4
+        x = 2,
+        y = 0
     },
     eternal_compat = true,
     unlocked = true,
@@ -1661,19 +1701,28 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
+            cards_destroyed = 0,
+            face_destroyed = 0,
+            destroyed_for_upgrade = 16,
+            mult = 20,
             chips = 0,
-            chip_mod = 25
+            chips_mod = 25
         }
     },
     loc_txt = {
         name = "The Arms Race",
-        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after", "they score, then gain",
-                "{C:chips}+#2#{} Chips for each destroyed", "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+        text = {"{C:red}+#4#{} Mult", "Destroy {C:attention}Kings{} and {C:attention}Jacks{} after they score",
+                "{C:chips}+#6#{} Chips for each {C:attention}King{} and {C:attention}Jack{} destroyed",
+                "{s:0.8}Upgrades after #3# playing cards are destroyed",
+                "{C:inactive}(Currently #1# cards destroyed and {C:chips}+#5# {C:inactive}Chips)"}
     },
 
     loc_vars = function(self, info_queue, card)
+        card.ability.extra.chips = card.ability.extra.chips_mod * card.ability.extra.face_destroyed
         return {
-            vars = {card.ability.extra.chips, card.ability.extra.chip_mod}
+            vars = {card.ability.extra.cards_destroyed, card.ability.extra.face_destroyed,
+                    card.ability.extra.destroyed_for_upgrade, card.ability.extra.mult, card.ability.extra.chips,
+                    card.ability.extra.chips_mod}
         }
     end,
 
@@ -1683,10 +1732,9 @@ SMODS.Joker {
                 if context.destroy_card == hand_card then
                     local id = hand_card:get_id()
                     if id == 11 or id == 13 then
-                        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod
                         return {
                             remove = true,
-                            message = localize('k_upgrade_ex'),
+                            message = 'CHOP CHOP!',
                             colour = G.C.CHIPS,
                             play_sound('slice1', 0.96 + math.random() * 0.08)
                         }
@@ -1694,9 +1742,36 @@ SMODS.Joker {
                 end
             end
         end
+
+        if context.remove_playing_cards and not context.blueprint then
+            local removed_card_count = #context.removed
+            local removed_face_card_count = 0
+            if removed_card_count > 0 then
+                for _, c in ipairs(context.removed) do
+                    card.ability.extra.cards_destroyed = card.ability.extra.cards_destroyed + 1
+                    local id = c:get_id()
+                    if id == 11 or id == 13 then
+                        card.ability.extra.face_destroyed = card.ability.extra.face_destroyed + 1
+                        removed_face_card_count = removed_face_card_count + 1
+                    end
+                end
+            end
+
+            if card.ability.extra.cards_destroyed >= card.ability.extra.destroyed_for_upgrade then
+                local upgraded = SMODS.add_card {
+                    key = "j_mutual",
+                    edition = card.edition
+                }
+                upgraded.ability.extra.cards_destroyed = card.ability.extra.cards_destroyed - removed_card_count
+                upgraded.ability.extra.face_destroyed = card.ability.extra.face_destroyed - removed_face_card_count
+                SMODS.destroy_cards(card, nil, nil, true)
+            end
+        end
+
         if context.joker_main then
             return {
-                chips = card.ability.extra.chips
+                chips = card.ability.extra.chips_mod * card.ability.extra.face_destroyed,
+                mult = card.ability.extra.mult
             }
         end
     end,
@@ -1723,19 +1798,28 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
+            cards_destroyed = 0,
+            face_destroyed = 0,
+            mult = 0,
             chips = 0,
-            chip_mod = 25
+            mult_mod = 2,
+            chips_mod = 25
         }
     },
     loc_txt = {
         name = "Mutually Assured Destruction",
-        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after", "they score, then gain",
-                "{C:chips}+#2#{} Chips for each destroyed", "{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)"}
+        text = {"Destroy {C:attention}Kings{} and {C:attention}Jacks{} after they score",
+                "{C:chips}+#6#{} Chips for each {C:attention}King{} and {C:attention}Jack{} destroyed",
+                "{C:red}+#5#{} Mult for each {C:attention}playing card{} destroyed",
+                "{C:inactive}(Currently {C:chips}+#4# {C:inactive}Chips and {C:red}+#3# {C:inactive}Mult)"}
     },
 
     loc_vars = function(self, info_queue, card)
+        card.ability.extra.mult = card.ability.extra.mult_mod * card.ability.extra.cards_destroyed
+        card.ability.extra.chips = card.ability.extra.chips_mod * card.ability.extra.face_destroyed
         return {
-            vars = {card.ability.extra.chips, card.ability.extra.chip_mod}
+            vars = {card.ability.extra.cards_destroyed, card.ability.extra.face_destroyed, card.ability.extra.mult,
+                    card.ability.extra.chips, card.ability.extra.mult_mod, card.ability.extra.chips_mod}
         }
     end,
 
@@ -1745,10 +1829,9 @@ SMODS.Joker {
                 if context.destroy_card == hand_card then
                     local id = hand_card:get_id()
                     if id == 11 or id == 13 then
-                        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod
                         return {
                             remove = true,
-                            message = localize('k_upgrade_ex'),
+                            message = 'CHOP CHOP!',
                             colour = G.C.CHIPS,
                             play_sound('slice1', 0.96 + math.random() * 0.08)
                         }
@@ -1756,9 +1839,26 @@ SMODS.Joker {
                 end
             end
         end
+
+        if context.remove_playing_cards and not context.blueprint then
+            local removed_card_count = #context.removed
+            local removed_face_card_count = 0
+            if removed_card_count > 0 then
+                for _, c in ipairs(context.removed) do
+                    card.ability.extra.cards_destroyed = card.ability.extra.cards_destroyed + 1
+                    local id = c:get_id()
+                    if id == 11 or id == 13 then
+                        card.ability.extra.face_destroyed = card.ability.extra.face_destroyed + 1
+                        removed_face_card_count = removed_face_card_count + 1
+                    end
+                end
+            end
+        end
+
         if context.joker_main then
             return {
-                chips = card.ability.extra.chips
+                chips = card.ability.extra.chips_mod * card.ability.extra.face_destroyed,
+                mult = card.ability.extra.mult_mod * card.ability.extra.cards_destroyed
             }
         end
     end,
