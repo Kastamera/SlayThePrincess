@@ -1,5 +1,4 @@
-# Slay the Princess
-![image](https://github.com/Kastamera/SlayThePrincess/blob/main/thumbnail.png)
+![image](thumbnail.png)
 
 ## Content
 
