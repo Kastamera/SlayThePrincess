@@ -1,12 +1,26 @@
-![image](.github/thumbnail.png)
+<img src=".github/thumbnail.png" alt="image" width="800"/>
+
 ## Content
 This Slay The Princess themed Balatro mod adds 30 Jokers, some of which introduce new mechanics, a new deck, and more!
 
-![image](.github/jokers1.png)
-![image](.github/jokers2.png)
+<img src=".github/jokers1.png" alt="image" width="400"/>
+<img src=".github/jokers2.png" alt="image" width="400"/>
 
-## Requirements
-[Steamodded](https://github.com/Steamodded/smods/releases/latest)
+I have some ideas to expand this mod with (Vouchers, a new Consumable type, The Long Quiet Deck, and several more...), but no promises as life can get in the way.
 
 ## Installation
-
+- Requires [Steamodded](https://github.com/Steamodded/smods/releases/latest), install the latest version if you haven't already
+- Download the latest release of Slay the Princess - A Balatro Mod
+- Extract the downloaded mod and move it to the Mods folder (on Windows %appdata%/Balatro/Mods)
+- The structure should look like the following:
+```text
+%APPDATA%/
+└─ Balatro/
+   └─ Mods/
+      └─ SlayThePrincess/
+         └─ .github/
+         └─ assets/
+         └─ .gitattributes
+         └─ README.md
+         └─ SlayThePrincess.lua
+```
