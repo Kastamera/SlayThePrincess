@@ -123,7 +123,7 @@ SMODS.Back {
                         key = "j_cage"
                     }
                     SMODS.add_card {
-                        key = "c_cryptid"
+                        key = "j_blueprint"
                     }
                     SMODS.add_card {
                         key = "c_cryptid"
@@ -132,7 +132,7 @@ SMODS.Back {
                         key = "c_cryptid"
                     }
                     SMODS.add_card {
-                        key = "c_aura"
+                        key = "c_cryptid"
                     }
                     SMODS.add_card {
                         key = "c_aura"
@@ -181,7 +181,7 @@ SMODS.Enhancement {
     loc_txt = {
         name = "Chained",
         text = {"{C:red}Cannot be selected{}", "Each played card with", "this card's rank gives",
-                "{X:mult,C:white} X#1#{} Mult when scored"}
+                "{X:mult,C:white} X#1#{} Mult when scored", "{s:0.85}Triggers with the Cage"}
     },
 
     set_sprites = function(self, card, front)
@@ -1123,14 +1123,14 @@ SMODS.Joker {
 SMODS.Joker {
     key = "cage",
     pool = "joker",
-    blueprint_compat = false,
+    blueprint_compat = true,
     rarity = "stp_pristine",
     cost = 14,
     pos = {
         x = 0,
         y = 4
     },
-    eternal_compat = false,
+    eternal_compat = true,
     unlocked = true,
     discovered = false,
     atlas = 'SlayThePrincess',
@@ -1205,7 +1205,7 @@ SMODS.Joker {
             delay(0.5)
         end
 
-        if context.individual and context.cardarea == G.play and not context.blueprint then
+        if context.individual and context.cardarea == G.play then
             local scoring = context.other_card
             if scoring and scoring.get_id then
                 local rank = scoring:get_id()
