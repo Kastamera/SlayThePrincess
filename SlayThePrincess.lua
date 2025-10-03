@@ -120,13 +120,22 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_networked"
+                        key = "j_shifty"
+                    }
+                    SMODS.add_card {
+                        key = "j_beast"
+                    }
+                    SMODS.add_card {
+                        key = "j_beast"
+                    }
+                    SMODS.add_card {
+                        key = "j_damsel"
                     }
                     SMODS.add_card {
                         key = "c_cryptid"
                     }
                     SMODS.add_card {
-                        key = "c_hanged_man"
+                        key = "c_magician"
                     }
                 end
                 return true
@@ -603,9 +612,9 @@ SMODS.Joker {
 
     loc_txt = {
         name = "The Moment of Clarity",
-        text = {"At start of round, gain", "+1 hand size for every",
-                "{C:attention}10 Queens{} in your {C:attention}full deck{},", "bonus lost at end of round",
-                "{C:inactive}Currently: +#1# hand size"}
+        text = {"At start of round, gain", "{C:attention}+1{} hand size and {C:attention}an",
+                "{C:attention}additional one{} for every", "{C:attention}10 Queens{} in your {C:attention}full deck{},",
+                "bonus lost at end of round", "{C:inactive}Currently: +#1# hand size"}
     },
 
     _count_hand_increase = function()
@@ -872,15 +881,18 @@ SMODS.Joker {
                     _G.STP_DAMSEL = true
                     playing_card_joker_effects({_card})
                     _G.STP_DAMSEL = false
-                    G.hand:emplace(_card)
-                    _card.states.visible = nil
+                    if G.hand.cards[1] then
+                        G.hand:emplace(_card)
+                        G.E_MANAGER:add_event(Event({
+                            func = function()
+                                _card:start_materialize()
+                                return true
+                            end
+                        }))
+                    else
+                        G.deck:emplace(_card)
+                    end
 
-                    G.E_MANAGER:add_event(Event({
-                        func = function()
-                            _card:start_materialize()
-                            return true
-                        end
-                    }))
                     SMODS.calculate_effect({
                         message = 'I just want to make you happy!',
                         colour = G.C.PURPLE
@@ -934,15 +946,18 @@ SMODS.Joker {
                         _G.STP_DAMSEL = true
                         playing_card_joker_effects({_card})
                         _G.STP_DAMSEL = false
-                        G.hand:emplace(_card)
-                        _card.states.visible = nil
+                        if G.hand.cards[1] then
+                            G.hand:emplace(_card)
+                            G.E_MANAGER:add_event(Event({
+                                func = function()
+                                    _card:start_materialize()
+                                    return true
+                                end
+                            }))
+                        else
+                            G.deck:emplace(_card)
+                        end
 
-                        G.E_MANAGER:add_event(Event({
-                            func = function()
-                                _card:start_materialize()
-                                return true
-                            end
-                        }))
                         SMODS.calculate_effect({
                             message = 'I just want to make you happy?',
                             colour = G.C.PURPLE
@@ -1231,15 +1246,15 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            mult = 0,
-            mult_mod = 10,
+            chips_mod = 50,
             sold_count = 1
         }
     },
 
     loc_txt = {
         name = "The Adversary",
-        text = {"{C:red}+#1#{} Mult, increases by {C:red}+#2#{} Mult", "every time this Joker is sold or destroyed"}
+        text = {"{C:chips}+#1#{} Chips, increases by {C:chips}+#2#{} Chips",
+                "every time this Joker is sold or destroyed"}
     },
 
     _state = function()
@@ -1252,14 +1267,14 @@ SMODS.Joker {
     loc_vars = function(self, info_queue, card)
         local sold = self._state().sold
         return {
-            vars = {sold * card.ability.extra.mult_mod, card.ability.extra.mult_mod, sold}
+            vars = {sold * card.ability.extra.chips_mod, card.ability.extra.chips_mod, sold}
         }
     end,
 
     calculate = function(self, card, context)
         if context.joker_main then
             return {
-                mult = self._state().sold * card.ability.extra.mult_mod
+                chips = self._state().sold * card.ability.extra.chips_mod
             }
         end
     end,
@@ -1270,8 +1285,8 @@ SMODS.Joker {
                 self._state().sold = self._state().sold + 1
                 play_sound('generic1', 0.9 + math.random() * 0.1, 0.8)
                 return {
-                    message = 'MORE!',
-                    colour = G.C.MULT
+                    message = 'GO AGAIN!',
+                    colour = G.C.CHIPS
                 }
             end
         })
@@ -1492,14 +1507,18 @@ SMODS.Joker {
             c:add_to_deck()
             G.deck.config.card_limit = G.deck.config.card_limit + 1
             table.insert(G.playing_cards, c)
-            G.hand:emplace(c)
-            c.states.visible = nil
-            G.E_MANAGER:add_event(Event({
-                func = function()
-                    c:start_materialize();
-                    return true
-                end
-            }))
+            playing_card_joker_effects({c})
+            if G.hand.cards[1] then
+                G.hand:emplace(c)
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        c:start_materialize();
+                        return true
+                    end
+                }))
+            else
+                G.deck:emplace(c)
+            end
         end
 
         SMODS.calculate_effect({
@@ -2433,7 +2452,7 @@ SMODS.Joker {
     config = {
         extra = {
             xmult = 0,
-            xmult_mod = 1.5
+            xmult_mod = 2
         }
     },
     loc_txt = {
