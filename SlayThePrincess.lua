@@ -120,22 +120,22 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_shifty"
-                    }
-                    SMODS.add_card {
-                        key = "j_beast"
-                    }
-                    SMODS.add_card {
-                        key = "j_beast"
-                    }
-                    SMODS.add_card {
-                        key = "j_damsel"
+                        key = "j_cage"
                     }
                     SMODS.add_card {
                         key = "c_cryptid"
                     }
                     SMODS.add_card {
-                        key = "c_magician"
+                        key = "c_cryptid"
+                    }
+                    SMODS.add_card {
+                        key = "c_cryptid"
+                    }
+                    SMODS.add_card {
+                        key = "c_aura"
+                    }
+                    SMODS.add_card {
+                        key = "c_aura"
                     }
                 end
                 return true
@@ -184,9 +184,39 @@ SMODS.Enhancement {
                 "{X:mult,C:white} X#1#{} Mult when scored"}
     },
 
+    set_sprites = function(self, card, front)
+        card.children.center:set_sprite_pos({
+            x = 6,
+            y = 0
+        })
+        card.children.center.cage_chained = true
+    end,
+
     in_pool = function(self, args)
         return false
     end
+}
+
+SMODS.DrawStep {
+    key = "stp_chained",
+    order = 21,
+    func = function(self, layer)
+        if self.children.center.cage_chained then
+            self.children.center:set_sprite_pos({
+                x = 6,
+                y = 4
+            })
+            self.children.center:draw_shader('dissolve')
+            self.children.center:set_sprite_pos({
+                x = 5,
+                y = 4
+            })
+        end
+    end,
+    conditions = {
+        vortex = false,
+        facing = 'front'
+    }
 }
 
 SMODS.ObjectType {
