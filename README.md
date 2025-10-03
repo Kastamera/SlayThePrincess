@@ -23,7 +23,7 @@ I have some ideas to expand this mod with (Vouchers, a new Consumable type, The 
 
 ## Installation
 - Requires [Steamodded](https://github.com/Steamodded/smods/releases/latest), install the latest version if you haven't already
-- Download the latest release of Slay the Princess - A Balatro Mod
+- Download the [latest release](https://github.com/Kastamera/SlayThePrincess/releases) of Slay the Princess - A Balatro Mod
 - Extract the downloaded mod and move it to the Mods folder (on Windows %appdata%/Balatro/Mods)
 - The structure should look like the following:
 ```text
