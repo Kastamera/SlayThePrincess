@@ -5,5 +5,4 @@
 # Balance changes needed:
 Shifting Mound is too weak for a Legendary
 Apotheosis is (potentially?) too strong
-Not enough econ
 Fury and Mutual almost same mechanic

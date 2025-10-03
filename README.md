@@ -1,9 +1,11 @@
 <img src=".github/thumbnail.png" alt="image" width="800"/>
 
 ## Content
-This Slay The Princess themed Balatro mod adds 30 Jokers, some of which introduce new mechanics, a new deck, and more!
+This Slay The Princess themed Balatro mod adds 31 Jokers, some of which introduce new mechanics, a new deck, and new Booster Packs!
 
 <img src=".github/jokers1.png" alt="image" width="320"/><img src=".github/jokers2.png" alt="image" width="320"/>
+
+<img src=".github/jokers3.png" alt="image" width="320"/><img src=".github/deck.png" alt="image" width="320"/>
 
 I have some ideas to expand this mod with (Vouchers, a new Consumable type, The Long Quiet Deck, and several more...), but no promises as life can get in the way.
 

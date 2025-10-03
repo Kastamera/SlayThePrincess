@@ -120,7 +120,13 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_head"
+                        key = "j_networked"
+                    }
+                    SMODS.add_card {
+                        key = "c_cryptid"
+                    }
+                    SMODS.add_card {
+                        key = "c_hanged_man"
                     }
                 end
                 return true
@@ -201,7 +207,8 @@ SMODS.ObjectType {
         ["j_razor"] = true,
         ["j_tower"] = true,
         ["j_apotheosis"] = true,
-        ["j_spectre"] = true
+        ["j_spectre"] = true,
+        ["j_networked"] = true
     }
 }
 
@@ -1606,6 +1613,56 @@ SMODS.Joker {
             end
         end
         return false
+    end
+}
+
+-- The Networked Wild
+SMODS.Joker {
+    key = "networked",
+    pool = "joker",
+    blueprint_compat = false,
+    rarity = 2,
+    cost = 7,
+    pos = {
+        x = 3,
+        y = 4
+    },
+    eternal_compat = true,
+    unlocked = true,
+    discovered = false,
+    atlas = 'SlayThePrincess',
+    config = {
+        extra = {
+            dollars = 1
+        }
+    },
+    loc_txt = {
+        name = "The Networked Wild",
+        text = {"Earn {C:money}$#1#{} for each", "{C:attention}Queen{} in your {C:attention}full deck",
+                "at end of round", "{C:inactive}(Currently {C:money}$#2#{}{C:inactive})"}
+    },
+
+    loc_vars = function(self, info_queue, card)
+        local queens = 0
+        if G.playing_cards then
+            for _, playing_card in ipairs(G.playing_cards) do
+                if playing_card:get_id() == 12 then
+                    queens = queens + 1
+                end
+            end
+        end
+        return {
+            vars = {card.ability.extra.dollars, card.ability.extra.dollars * queens}
+        }
+    end,
+    calc_dollar_bonus = function(self, card)
+        local queens = 0
+        for _, playing_card in ipairs(G.playing_cards) do
+            if playing_card:get_id() == 12 then
+                queens = queens + 1
+            end
+        end
+        return queens > 0 and card.ability.extra.dollars * queens or nil
     end
 }
 
