@@ -120,16 +120,7 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                     SMODS.add_card {
-                        key = "j_wraith"
-                    }
-                    SMODS.add_card {
-                        key = "j_hanging_chad"
-                    }
-                    SMODS.add_card {
-                        key = "c_hanged_man"
-                    }
-                    SMODS.add_card {
-                        key = "c_hanged_man"
+                        key = "j_head"
                     }
                 end
                 return true
@@ -808,7 +799,10 @@ SMODS.Joker {
                 card.ability.extra.upgrade = card.ability.extra.upgrade - 1
                 if card.ability.extra.upgrade > 0 then
                     return {
-                        message = 'Trying to trust...'
+                        message = 'Trying to trust...',
+                        card:juice_up(0.4, 0.6),
+                        colour = G.C.PURPLE,
+                        play_sound('generic1', 0.9 + math.random() * 0.1, 0.8)
                     }
                 end
             end
@@ -1055,6 +1049,12 @@ SMODS.Joker {
                 }
                 SMODS.destroy_cards(card, nil, nil, true)
             end
+            return {
+                message = 'Patience...',
+                card:juice_up(0.4, 0.6),
+                colour = G.C.PURPLE,
+                play_sound('generic1', 0.9 + math.random() * 0.1, 0.8)
+            }
         end
     end,
 
