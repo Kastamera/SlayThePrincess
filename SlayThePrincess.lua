@@ -229,10 +229,10 @@ SMODS.Booster {
         extra = 2,
         choose = 1
     },
-    group_key = "stp_vessel_pack",
     loc_txt = {
         name = "Vessel Pack",
-        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"},
+        group_name = "Vessel Pack"
     },
     loc_vars = function(self, info_queue, card)
         local cfg = (card and card.ability) or self.config
@@ -274,10 +274,10 @@ SMODS.Booster {
         extra = 2,
         choose = 1
     },
-    group_key = "stp_vessel_pack",
     loc_txt = {
         name = "Vessel Pack",
-        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"},
+        group_name = "Vessel Pack"
     },
     loc_vars = function(self, info_queue, card)
         local cfg = (card and card.ability) or self.config
@@ -319,10 +319,10 @@ SMODS.Booster {
         extra = 4,
         choose = 1
     },
-    group_key = "stp_vessel_pack",
     loc_txt = {
         name = "Jumbo Vessel Pack",
-        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"},
+        group_name = "Vessel Pack"
     },
     loc_vars = function(self, info_queue, card)
         local cfg = (card and card.ability) or self.config
@@ -364,10 +364,10 @@ SMODS.Booster {
         extra = 4,
         choose = 2
     },
-    group_key = "stp_vessel_pack",
     loc_txt = {
         name = "Mega Vessel Pack",
-        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"}
+        text = {"Choose {C:attention}#1#{} of up to", "{C:attention}#2#{C:joker} Princess Jokers{}"},
+        group_name = "Vessel Pack"
     },
 
     loc_vars = function(self, info_queue, card)
