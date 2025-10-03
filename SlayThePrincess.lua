@@ -119,6 +119,21 @@ SMODS.Back {
                         force_stickers = true,
                         edition = "e_negative"
                     }
+                    SMODS.add_card {
+                        key = "j_beast"
+                    }
+                    SMODS.add_card {
+                        key = "j_beast"
+                    }
+                    SMODS.add_card {
+                        key = "j_deconstructed"
+                    }
+                    SMODS.add_card {
+                        key = "c_deja_vu"
+                    }
+                    SMODS.add_card {
+                        key = "c_magician"
+                    }
                 end
                 return true
             end
@@ -893,6 +908,7 @@ SMODS.Joker {
                     playing_card_joker_effects({_card})
                     _G.STP_DAMSEL = false
                     if G.hand.cards[1] then
+                        _card.states.visible = nil
                         G.hand:emplace(_card)
                         G.E_MANAGER:add_event(Event({
                             func = function()
@@ -958,6 +974,7 @@ SMODS.Joker {
                         playing_card_joker_effects({_card})
                         _G.STP_DAMSEL = false
                         if G.hand.cards[1] then
+                            _card.states.visible = nil
                             G.hand:emplace(_card)
                             G.E_MANAGER:add_event(Event({
                                 func = function()
@@ -1530,6 +1547,7 @@ SMODS.Joker {
             table.insert(G.playing_cards, c)
             playing_card_joker_effects({c})
             if G.hand.cards[1] then
+                c.states.visible = nil
                 G.hand:emplace(c)
                 G.E_MANAGER:add_event(Event({
                     func = function()
