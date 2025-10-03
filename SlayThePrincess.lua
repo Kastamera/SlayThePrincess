@@ -119,24 +119,6 @@ SMODS.Back {
                         force_stickers = true,
                         edition = "e_negative"
                     }
-                    SMODS.add_card {
-                        key = "j_cage"
-                    }
-                    SMODS.add_card {
-                        key = "j_blueprint"
-                    }
-                    SMODS.add_card {
-                        key = "c_cryptid"
-                    }
-                    SMODS.add_card {
-                        key = "c_cryptid"
-                    }
-                    SMODS.add_card {
-                        key = "c_cryptid"
-                    }
-                    SMODS.add_card {
-                        key = "c_aura"
-                    }
                 end
                 return true
             end
@@ -667,7 +649,6 @@ SMODS.Joker {
         if context.setting_blind and not context.blueprint then
             card.ability.extra.hand_size = self._count_hand_increase()
             G.hand:change_size(card.ability.extra.hand_size)
-            SMODS.draw_cards(card.ability.extra.hand_size)
         end
 
         if context.end_of_round and context.game_over == false and context.main_eval and not context.blueprint then
@@ -1053,6 +1034,16 @@ SMODS.Joker {
             }
             head_card.ability.extra.turns = head_card.ability.extra.max_turns
         end
+    end,
+
+    in_pool = function(self, args)
+        if SMODS.find_card("j_showman") then
+            return true
+        end
+        if SMODS.find_card("j_head") or SMODS.find_card("j_cage") then
+            return false
+        end
+        return true
     end
 }
 
@@ -1784,8 +1775,8 @@ SMODS.Joker {
     atlas = 'SlayThePrincess',
     config = {
         extra = {
-            xmult_start = 0.75,
-            xmult = 0.75,
+            xmult_start = 1,
+            xmult = 1,
             xmult_mod = 0.25
         }
     },
