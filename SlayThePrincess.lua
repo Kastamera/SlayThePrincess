@@ -608,7 +608,7 @@ SMODS.Joker {
 
     loc_txt = {
         name = "The Moment of Clarity",
-        text = {"At start of round, gain", "{C:attention}+1{} hand size and {C:attention}an",
+        text = {"When {C:attention}Blind{} is selected, gain", "{C:attention}+1{} hand size and {C:attention}an",
                 "{C:attention}additional one{} for every", "{C:attention}10 Queens{} in your {C:attention}full deck{},",
                 "bonus lost at end of round", "{C:inactive}Currently: +#1# hand size"}
     },
