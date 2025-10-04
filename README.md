@@ -30,8 +30,7 @@ I have some ideas to expand this mod with (Vouchers, a new Consumable type, The 
 %APPDATA%/
 └─ Balatro/
    └─ Mods/
-      └─ SlayThePrincess/
-         └─ .github/
+      └─ SlayThePrincess-0.1.0/
          └─ assets/
          └─ .gitattributes
          └─ README.md
