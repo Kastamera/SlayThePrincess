@@ -1,6 +1,3 @@
-# Balance changes needed:
+# Balance changes (further feedback required):
 Apotheosis is (potentially?) too strong
 Fury and Mutual almost same mechanic
-
-# Bug:
-The Beast forgets the consumed cards after reloading the game

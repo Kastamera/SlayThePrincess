@@ -30,34 +30,6 @@ SMODS.Atlas {
     py = 95
 }
 
-_G.STP = _G.STP or {}
-function _G.STP.ensure_cs_stack()
-    if G and not G.cs_stack and G.jokers and G.jokers.T then
-        local W = 4.9 * G.CARD_W
-        local H = 0.95 * G.CARD_H
-        G.cs_stack = CardArea(G.jokers.T.x, G.jokers.T.y - (G.jokers.T.h * 2), W, H, {
-            card_limit = 5,
-            type = 'cs_stack',
-            highlight_limit = 0
-        })
-    end
-end
-
-if not _G.STP._drew_hooked then
-    local _orig_draw_card = draw_card
-    function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-        if card and card.cs_eaten then
-            _G.STP.ensure_cs_stack()
-            if G.cs_stack then
-                return _orig_draw_card(from, G.cs_stack, percent, dir, sort, card, delay, mute, stay_flipped, vol,
-                    discarded_only)
-            end
-        end
-        return _orig_draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-    end
-    _G.STP._drew_hooked = true
-end
-
 if not _G.STP then
     _G.STP = {}
 end
@@ -74,6 +46,18 @@ if not _G.STP._can_highlight_hooked then
     end
 
     _G.STP._can_highlight_hooked = true
+end
+
+_G.STP = _G.STP or {}
+
+function _G.STP.pack_playing_card(c)
+    return {
+        rank = c.base.value,
+        suit = c.base.suit,
+        enhancement = (c.config and c.config.center and c.config.center.key) or 'c_base',
+        seal = c.seal or nil,
+        c.edition and c.edition.key or nil
+    }
 end
 
 function _G.STP_is_leftmost_beast(card)
@@ -118,21 +102,6 @@ SMODS.Back {
                         stickers = {"eternal"},
                         force_stickers = true,
                         edition = "e_negative"
-                    }
-                    SMODS.add_card {
-                        key = "j_beast"
-                    }
-                    SMODS.add_card {
-                        key = "j_beast"
-                    }
-                    SMODS.add_card {
-                        key = "j_deconstructed"
-                    }
-                    SMODS.add_card {
-                        key = "c_deja_vu"
-                    }
-                    SMODS.add_card {
-                        key = "c_magician"
                     }
                 end
                 return true
@@ -1471,7 +1440,9 @@ SMODS.Joker {
     discovered = false,
     atlas = 'SlayThePrincess',
     config = {
-        extra = {}
+        extra = {
+            eaten = {}
+        }
     },
 
     loc_txt = {
@@ -1491,23 +1462,7 @@ SMODS.Joker {
                 #context.full_hand == 1 and context.destroy_card == context.full_hand[1] then
 
                 local victim = context.full_hand[1]
-
-                _G.STP.ensure_cs_stack()
-                if G.cs_stack then
-                    local saved = copy_card(victim, nil, nil, G.playing_card)
-                    saved.cs_eaten_saved = true
-                    saved.stp_beast_owner = card.GUID or tostring(card)
-                    G.cs_stack:emplace(saved)
-                    saved.states.visible = nil
-                    G.E_MANAGER:add_event(Event({
-                        func = function()
-                            saved:start_materialize();
-                            return true
-                        end
-                    }))
-                end
-
-                victim.cs_eaten = true
+                table.insert(card.ability.extra.eaten, _G.STP.pack_playing_card(victim))
 
                 return {
                     message = 'Eaten',
@@ -1519,47 +1474,30 @@ SMODS.Joker {
     end,
 
     remove_from_deck = function(self, card)
-        if not (G.cs_stack and G.cs_stack.cards and #G.cs_stack.cards > 0) then
-            return
-        end
-        local owner = card.GUID or tostring(card)
-
-        local to_return = {}
-        for _, c in ipairs(G.cs_stack.cards) do
-            if c.cs_eaten_saved and c.stp_beast_owner == owner then
-                table.insert(to_return, c)
-            end
-        end
-        if #to_return == 0 then
+        local eaten = card.ability.extra.eaten or {}
+        if #eaten == 0 then
             return
         end
 
-        for _, c in ipairs(to_return) do
-            c.cs_eaten_saved = nil
-            c.stp_beast_owner = nil
-            c.cs_eaten = nil
-            if c.area == G.cs_stack then
-                G.cs_stack:remove_card(c)
+        for _, snap in ipairs(eaten) do
+            local _area = G.hand
+            if not G.hand.cards[1] then
+                _area = G.deck
             end
+            local c = SMODS.add_card({
+                set = "Base",
+                rank = snap.rank,
+                suit = snap.suit,
+                area = _area,
+                edition = snap.edition,
+                seal = snap.seal,
+                enhancement = snap.enhancement
+            })
 
-            c:add_to_deck()
-            G.deck.config.card_limit = G.deck.config.card_limit + 1
-            table.insert(G.playing_cards, c)
             playing_card_joker_effects({c})
-            if G.hand.cards[1] then
-                c.states.visible = nil
-                G.hand:emplace(c)
-                G.E_MANAGER:add_event(Event({
-                    func = function()
-                        c:start_materialize();
-                        return true
-                    end
-                }))
-            else
-                G.deck:emplace(c)
-            end
         end
 
+        card.ability.extra.eaten = {}
         SMODS.calculate_effect({
             message = 'Regurgitated',
             colour = G.C.PURPLE
