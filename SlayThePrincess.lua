@@ -7,13 +7,8 @@
 ----------------------------------------------
 ------------MOD CODE -------------------------
 function SMODS.INIT.SlayThePrincess()
-    local function hex_to_rgb(hex)
-        hex = hex:gsub("#", "")
-        return {tonumber("0x" .. hex:sub(1, 2)) / 255, tonumber("0x" .. hex:sub(3, 4)) / 255,
-                tonumber("0x" .. hex:sub(5, 6)) / 255, 1}
-    end
-
-    G.ARGS.LOC_COLOURS["mint"] = hex_to_rgb("CFFFF6")
+    loc_colour()
+    G.ARGS.LOC_COLOURS["mint"] = HEX("CFFFF6")
 end
 
 SMODS.Atlas {
