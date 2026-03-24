@@ -99,13 +99,12 @@ SMODS.Back {
                         edition = "e_negative"
                     }
                 end
+
+                SMODS.upgrade_poker_hands{level_up = -1, instant = true}
+
                 return true
             end
         }))
-
-        for poker_hand_key, _ in pairs(G.GAME.hands) do
-            SMODS.smart_level_up_hand(nil, poker_hand_key, true, -1)
-        end
 
         G.GAME.pool_flags.stp_vessel_packs = true
     end
